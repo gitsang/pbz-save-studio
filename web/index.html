@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>影之刃零 · 存档工坊</title>
+<style>
+  :root{
+    --paper:#f6f3ec; --card:#fffdf9; --line:#e3dccf; --line-2:#efe9dd;
+    --ink:#2b2521; --ink-2:#5c534b; --muted:#8d8378;
+    --red:#b0392a; --red-soft:#f7e8e3; --gold:#9a7b3f; --green:#40694f;
+    --mono:"Cascadia Mono","JetBrains Mono",Consolas,"Courier New",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:
+      radial-gradient(1200px 600px at 15% -10%, #fffdf7 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, #f2ede2 0%, transparent 55%),
+      var(--paper);
+    color:var(--ink);
+    font:14px/1.6 "PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  button,input,select{font-family:inherit;font-size:13px;color:var(--ink)}
+  button{cursor:pointer}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  /* ---------- top bar ---------- */
+  header{
+    display:flex;align-items:center;gap:16px;
+    padding:14px 22px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#fffdf8,#fbf8f1);
+  }
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand h1{margin:0;font-size:17px;font-weight:600;letter-spacing:.06em}
+  .brand .zh{font-size:12px;color:var(--muted);letter-spacing:.3em}
+  .brand .ver{
+    font-family:var(--mono);font-size:10.5px;color:#b6ab99;letter-spacing:.04em;
+    border:1px solid var(--line);border-radius:4px;padding:0 5px;transform:translateY(-1px)
+  }
+  .seal{
+    width:26px;height:26px;border-radius:4px;display:grid;place-items:center;
+    background:var(--red);color:#fff;font-size:12px;font-weight:700;letter-spacing:0;
+    box-shadow:0 1px 0 rgba(0,0,0,.08);transform:translateY(2px)
+  }
+  .path{
+    margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--muted);
+    max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    padding:5px 10px;border:1px dashed var(--line);border-radius:6px;background:#fdfbf6
+  }
+  .tag{
+    font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);
+    color:var(--ink-2);background:#fdfbf6;white-space:nowrap
+  }
+  .tag.warn{border-color:#e8c4b8;background:var(--red-soft);color:#8d2f22}
+  .tag.ok{border-color:#cfe0d4;background:#eef5ef;color:var(--green)}
+
+  /* ---------- layout ---------- */
+  html,body{height:100%;overflow:hidden}
+  .app{height:100vh;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .wrap{flex:1;min-height:0;display:grid;grid-template-columns:312px 1fr;overflow:hidden}
+  aside{
+    min-height:0;display:flex;flex-direction:column;gap:12px;padding:14px 12px 12px;
+    border-right:1px solid var(--line);overflow:hidden;
+    background:linear-gradient(180deg,rgba(255,253,248,.7),rgba(250,247,239,.4));
+  }
+  .side-block{display:flex;flex-direction:column;gap:6px;min-height:0}
+  .side-block.grow{flex:1;min-height:0}
+  .side-block select{width:100%;height:30px;font-size:12px}
+  #slotList{flex:1;min-height:0;overflow-y:auto;padding-right:4px}
+  main{min-height:0;display:flex;flex-direction:column;overflow:hidden}
+  .aside-h{
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:11px;letter-spacing:.18em;color:var(--muted);margin:0 2px 2px
+  }
+
+  /* ---------- tabs ---------- */
+  .tabs{
+    flex:none;display:flex;align-items:center;gap:2px;
+    padding:10px 20px 0;border-bottom:1px solid var(--line);background:#fffdf9
+  }
+  .tab{
+    border:none;background:transparent;padding:8px 15px 10px;font-size:13px;color:var(--muted);
+    border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s;letter-spacing:.02em
+  }
+  .tab:hover{color:var(--ink)}
+  .tab.on{color:var(--ink);border-bottom-color:var(--red);font-weight:600}
+  .tabs .hint{margin-left:auto;font-size:11px;color:var(--muted);padding-bottom:8px}
+  .tabs .cnt-badge{
+    font-family:var(--mono);font-size:10.5px;color:var(--muted);
+    background:#f2ece0;border-radius:999px;padding:1px 7px;margin-left:6px
+  }
+  .panel{display:none;flex:1;min-height:0;flex-direction:column}
+  .panel.on{display:flex}
+  @media (max-width:1100px){
+    .wrap{grid-template-columns:268px 1fr}
+    aside{padding:12px 9px 10px}
+    .panel-body td,.panel-body th{padding-left:7px;padding-right:7px}
+    .boss .sub{font-size:9.5px}
+    .tabs{padding:8px 14px 0}
+  }
+  .panel-head{
+    flex:none;display:flex;align-items:center;gap:12px;padding:10px 20px;
+    border-bottom:1px solid var(--line-2);background:#fffdf9
+  }
+  .panel-body{flex:1;min-height:0;overflow:auto}
+  .slot{
+    display:grid;grid-template-columns:1fr auto;gap:2px 8px;
+    padding:9px 11px;border:1px solid transparent;border-radius:8px;cursor:pointer;
+    transition:.14s;margin-bottom:2px
+  }
+  .slot:hover{background:#fffdf8;border-color:var(--line-2)}
+  .slot.on{background:#fffdf8;border-color:var(--line);box-shadow:0 1px 2px rgba(120,100,70,.06)}
+  .slot.on .slot-n{color:var(--red)}
+  .slot-n{font-family:var(--mono);font-size:12.5px;font-weight:600}
+  .slot-d{font-size:11px;color:var(--muted);text-align:right;font-family:var(--mono)}
+  .slot-m{grid-column:1/-1;font-size:11px;color:var(--muted);font-family:var(--mono)}
+  .slot .dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--gold);
+    margin-right:5px;vertical-align:middle}
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    box-shadow:0 1px 2px rgba(120,100,70,.05),0 8px 24px -18px rgba(80,60,40,.25);
+  }
+  .card + .card{margin-top:16px}
+  .card-h{
+    display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line-2)
+  }
+  .card-h h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.05em}
+  .card-h .hint{font-size:11px;color:var(--muted);margin-left:auto}
+  .card-b{padding:14px 16px}
+
+  .bar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:11px;color:var(--muted);letter-spacing:.08em}
+  select,input[type=text],input[type=number]{
+    height:32px;border:1px solid var(--line);border-radius:6px;background:#fff;
+    padding:0 9px;outline:none;transition:.15s
+  }
+  select:focus,input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(154,123,63,.12)}
+  .btn{
+    height:32px;padding:0 14px;border:1px solid var(--line);border-radius:6px;
+    background:#fff;transition:.15s;white-space:nowrap
+  }
+  .btn:hover{border-color:var(--gold);color:var(--gold)}
+  .btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+  .btn.primary:hover{background:#98301f;border-color:#98301f;color:#fff}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.wide{padding:0 18px}
+
+  /* ---------- table ---------- */
+  table{width:100%;border-collapse:collapse;table-layout:fixed}
+  thead th:first-child{width:40%}
+  thead th:nth-child(2){width:12%}
+  thead th:nth-child(3),thead th:nth-child(4),thead th:nth-child(5){width:10%}
+  thead th:nth-child(6){width:18%}
+  tbody td{overflow:hidden}
+  .boss{overflow-wrap:anywhere}
+  thead th.sortable{cursor:pointer;user-select:none;transition:.15s}
+  thead th.sortable:hover{color:var(--gold)}
+  thead th.sortable .ar{font-size:9px;color:var(--gold);opacity:.9}
+  thead th.on{color:var(--ink)}
+  thead th{
+    position:sticky;top:0;z-index:2;background:#fbf8f1;
+    font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.1em;
+    text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)
+  }
+  tbody td{padding:6px 10px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+  tbody tr:hover{background:#fdfaf3}
+  tbody tr.dirty{background:#fdf3ef}
+  tbody tr.dirty:hover{background:#fbece6}
+  .boss{font-size:12.5px}
+  .boss .sub{display:block;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.02em}
+  .chk{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer}
+  .item-id{font-family:var(--mono);font-size:11.5px}
+  .item-id .sub{display:block;font-family:inherit;font-size:10.5px;color:var(--muted)}
+  .q{
+    display:inline-block;width:13px;height:13px;line-height:13px;text-align:center;border-radius:50%;
+    background:#f3ead3;color:#9a7b3f;font-size:9.5px;margin-left:5px;vertical-align:1px;
+    cursor:help;font-family:var(--mono)
+  }
+  .pill{display:inline-block;font-size:10.5px;padding:1px 8px;border-radius:999px;
+    border:1px solid var(--line);color:var(--ink-2);background:#fdfbf6;white-space:nowrap}
+  .pill.d1{border-color:#d6e3d8;background:#eff5f0;color:#3d6349}
+  .pill.d2{border-color:#dfd8c6;background:#f7f3e6;color:#7a6533}
+  .pill.d3{border-color:#e8c9bf;background:#faeee9;color:#96362a}
+  .cell-in{
+    width:64px;height:27px;text-align:right;font-family:var(--mono);font-size:12.5px;
+    border:1px solid transparent;border-radius:5px;background:transparent;padding:0 6px
+  }
+  .cell-in:hover{border-color:var(--line);background:#fff}
+  .cell-in:focus{border-color:var(--gold);background:#fff;box-shadow:0 0 0 3px rgba(154,123,63,.12)}
+  .cell-in.time{width:96px}
+  .diffedit{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+  .diffedit select{height:26px;font-size:12px;padding:0 6px}
+  .diff-sel{
+    appearance:none;height:24px;padding:0 20px 0 9px;font-size:11px;cursor:pointer;
+    border:1px solid var(--line);border-radius:999px;background:#fdfbf6;color:var(--ink-2);
+    background-image:linear-gradient(45deg,transparent 50%,#a99e8e 50%),linear-gradient(135deg,#a99e8e 50%,transparent 50%);
+    background-position:calc(100% - 11px) 10px,calc(100% - 7px) 10px;
+    background-size:4px 4px,4px 4px;background-repeat:no-repeat;
+    transition:.15s
+  }
+  .diff-sel:hover{border-color:var(--gold)}
+  .diff-sel.d1{border-color:#d6e3d8;background-color:#eff5f0;color:#3d6349}
+  .diff-sel.d2{border-color:#dfd8c6;background-color:#f7f3e6;color:#7a6533}
+  .diff-sel.d3{border-color:#e8c9bf;background-color:#faeee9;color:#96362a}
+  .fk{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+  .fk.none{color:#c3b9aa}
+  .fk.old{color:#a89a84;cursor:help}
+  .deaths{font-family:var(--mono);font-size:13px}
+  .deaths.zero{color:var(--green)}
+  .deaths.bad{color:var(--red);background:var(--red-soft);border-radius:4px;padding:0 5px;font-weight:600;cursor:help}
+  .deaths.hot{color:var(--red);font-weight:600}
+  .empty{padding:34px;text-align:center;color:var(--muted);font-size:12.5px}
+
+  /* ---------- footer / log ---------- */
+  .footbar{
+    flex:none;display:flex;align-items:center;gap:12px;
+    padding:14px 22px;background:#fffdf9;border-top:1px solid var(--line);
+    box-shadow:0 -6px 18px -16px rgba(80,60,40,.5)
+  }
+  .footbar .note{
+    font-family:var(--mono);font-size:11px;color:var(--muted);
+    max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+  }
+  .footbar .note.ok{color:var(--green)}
+  .footbar .note.err{color:var(--red)}
+  .footbar .cnt{font-size:12px;color:var(--ink-2)}
+  .footbar .cnt b{color:var(--red);font-family:var(--mono)}
+  .footbar .spacer{flex:1}
+  .log{
+    margin-top:14px;font-family:var(--mono);font-size:11.5px;color:var(--ink-2);
+    max-height:220px;overflow:auto;background:#fdfbf6;border:1px solid var(--line-2);
+    border-radius:8px;padding:10px 12px;white-space:pre-wrap;line-height:1.7
+  }
+  .log .ok{color:var(--green)}
+  .log .err{color:var(--red)}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:#d8cfbe;border-radius:9px;border:2px solid transparent;background-clip:content-box}
+  ::-webkit-scrollbar-thumb:hover{background:#c6baa4;background-clip:content-box}
+  ::-webkit-scrollbar-track{background:transparent}
+  .toast{
+    position:fixed;right:22px;bottom:22px;z-index:50;max-width:420px;
+    background:#2b2521;color:#f7f3ea;padding:11px 15px;border-radius:8px;font-size:12.5px;
+    box-shadow:0 12px 30px -12px rgba(0,0,0,.5);opacity:0;transform:translateY(8px);
+    transition:.22s;pointer-events:none
+  }
+  .toast.show{opacity:1;transform:none}
+  .toast.err{background:#8d2f22}
+
+  /* ---------- dialog ---------- */
+  .mask{position:fixed;inset:0;background:rgba(43,37,33,.36);display:none;place-items:center;z-index:60}
+  .mask.show{display:grid}
+  .dlg{width:min(760px,92vw);max-height:78vh;display:flex;flex-direction:column;
+    background:var(--card);border-radius:12px;border:1px solid var(--line);
+    box-shadow:0 30px 60px -20px rgba(60,45,30,.4)}
+  .dlg-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line-2)}
+  .dlg-h h3{margin:0;font-size:14px}
+  .dlg-b{padding:14px 18px;overflow:auto;font-family:var(--mono);font-size:11.5px;
+    white-space:pre-wrap;line-height:1.85;color:var(--ink-2)}
+  .dlg-f{display:flex;gap:10px;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--line-2)}
+  .close{margin-left:auto;border:none;background:transparent;font-size:18px;color:var(--muted);line-height:1}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="brand">
+      <div class="seal">刃</div>
+      <h1>存档工坊</h1>
+      <span class="zh">影之刃零</span>
+      <span class="ver">v1.0.0</span>
+    </div>
+    <span class="tag" id="tagGame">检测中…</span>
+    <div class="path" id="savPath" title="">—</div>
+    <button class="btn" id="btnRefresh">刷新</button>
+  </header>
+
+  <div class="wrap">
+    <aside>
+      <div class="side-block">
+        <div class="aside-h"><span>存档备份</span><span id="backupCount"></span></div>
+        <select id="selBackup" title="每次写入前自动生成 .bak-时间戳"></select>
+        <button class="btn" id="btnRestore">还原到此备份</button>
+      </div>
+
+      <div class="side-block grow">
+        <div class="aside-h"><span>存档槽位</span><span id="slotCount"></span></div>
+        <div id="slotList"></div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="tabs">
+        <button class="tab on" data-tab="boss">Boss 战报<span class="cnt-badge" id="bossCount"></span></button>
+        <button class="tab" data-tab="items">物品<span class="cnt-badge" id="itemCount"></span></button>
+        <span class="hint" id="curHint"></span>
+      </div>
+
+      <section class="panel on" id="panelBoss">
+        <div class="panel-body" id="tableWrap"><div class="empty">左侧选择一个槽位</div></div>
+      </section>
+
+      <section class="panel" id="panelItems">
+        <div class="panel-head">
+          <input type="text" id="inpItemSearch" placeholder="筛选 ID 或类别" style="height:28px;width:190px">
+          <label class="chk"><input type="checkbox" id="chkItemNonZero"> 只看有数量的</label>
+          <span class="hint" id="itemHint" style="margin-left:auto"></span>
+        </div>
+        <div class="panel-body" id="itemWrap"><div class="empty">—</div></div>
+      </section>
+
+      <div class="footbar">
+        <span class="cnt">待提交：<b id="dirtyCount">0</b> 处修改</span>
+        <span class="note" id="footNote"></span>
+        <span style="flex:1"></span>
+        <button class="btn" id="btnDiscard">丢弃修改</button>
+        <button class="btn" id="btnPreview2">预览</button>
+        <button class="btn primary wide" id="btnWrite">写入存档</button>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="mask" id="mask">
+  <div class="dlg">
+    <div class="dlg-h"><h3 id="dlgTitle">变更预览</h3><button class="close" id="dlgX">×</button></div>
+    <div class="dlg-b" id="dlgBody"></div>
+    <div class="dlg-f">
+      <button class="btn" id="dlgCancel">取消</button>
+      <button class="btn primary" id="dlgOk">确认写入</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const DIFF_PILL = d => `pill d${d}`;
+const state = { slots:[], cur:null, rows:[], items:[], pending:new Map(), itemPending:new Map(), moves:new Map(), sort:{key:null,dir:1}, lastPreview:null };
+
+/* ---------- utils ---------- */
+function fmtMs(ms){
+  if(ms===null||ms===undefined) return '';
+  ms=Number(ms); if(!ms) return '0:00.000';
+  return `${Math.floor(ms/60000)}:${String(Math.floor(ms%60000/1000)).padStart(2,'0')}.${String(ms%1000).padStart(3,'0')}`;
+}
+function parseTime(v){
+  v=(v||'').trim(); if(!v) return null;
+  if(v.includes(':')){ const [m,s]=v.split(':'); return Math.round((Number(m)*60+Number(s))*1000); }
+  const n=Number(v); return Number.isFinite(n)?Math.round(n*1000):null;
+}
+function toast(msg, err){
+  const t=$('#toast'); t.textContent=msg; t.className='toast show'+(err?' err':'');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.className='toast',2600);
+}
+function log(line, cls){
+  console.log(line);
+  const el=$('#footNote'); if(el){ el.textContent=line; el.className='note '+(cls||''); }
+}
+async function api(path, opt){
+  const r = await fetch(path, opt);
+  const j = await r.json().catch(()=>({error:'响应解析失败'}));
+  if(!r.ok || j.error) throw new Error(j.error||('HTTP '+r.status));
+  return j;
+}
+
+/* ---------- load ---------- */
+async function loadState(){
+  const s = await api('/api/state');
+  state.slots = s.slots;
+  $('#savPath').textContent = s.sav;
+  $('#savPath').title = s.sav;
+  $('#slotCount').textContent = s.slots.length + ' 档';
+  const g = $('#tagGame');
+  g.textContent = s.gameRunning ? '游戏正在运行 · 禁止写入' : '游戏未运行 · 可写入';
+  g.className = 'tag ' + (s.gameRunning ? 'warn' : 'ok');
+
+  const list=$('#slotList'); list.innerHTML='';
+  s.slots.forEach(sl=>{
+    const d=document.createElement('div');
+    d.className='slot'+(state.cur===sl.name?' on':'');
+    d.innerHTML = `
+      <div class="slot-n">${sl.active?'<span class="dot"></span>':''}${sl.name}</div>
+      <div class="slot-d">${sl.diff}·${sl.diffName.split('(')[0]}</div>
+      <div class="slot-m">周目${sl.cycle} · ${sl.playtime} · 死${sl.deaths} · 余${sl.days}天</div>`;
+    d.onclick = ()=>selectSlot(sl.name);
+    list.appendChild(d);
+  });
+
+  const bs=$('#selBackup'); bs.innerHTML='';
+  (s.backups||[]).forEach(b=>{
+    const o=document.createElement('option'); o.value=b.file;
+    o.textContent=`${b.time}  ·  ${(b.size/1048576).toFixed(2)} MB`; bs.appendChild(o);
+  });
+  const bc=$('#backupCount'); if(bc) bc.textContent = (s.backups||[]).length ? (s.backups.length + ' 份') : '';
+  if(!(s.backups||[]).length){
+    const o=document.createElement('option'); o.value=''; o.textContent='暂无备份'; bs.appendChild(o);
+    $('#btnRestore').disabled=true;
+  } else $('#btnRestore').disabled=false;
+
+  const cur = state.cur || s.active || (s.slots[0]&&s.slots[0].name);
+  if(cur) await selectSlot(cur, true);
+}
+
+async function selectSlot(name, silent){
+  state.cur = name;
+  state.moves.clear();
+  updateDirty();
+  [...document.querySelectorAll('.slot')].forEach((el,i)=>{
+    el.classList.toggle('on', state.slots[i].name===name);
+  });
+  const d = await api('/api/boss?slot='+encodeURIComponent(name));
+  state.rows = d.rows;
+  renderTable();
+  const bc2=$('#bossCount'); if(bc2) bc2.textContent = state.rows.length;
+  const di = await api('/api/items?slot=' + encodeURIComponent(name));
+  state.items = di.items;
+  renderItems();
+  const ic=$('#itemCount'); if(ic) ic.textContent = state.items.length;
+  const sl = state.slots.find(x=>x.name===name);
+  $('#curHint').textContent = sl ? `${sl.diffName} · 周目 ${sl.cycle} · 死亡 ${sl.deaths} · 余 ${sl.days} 天` : '';
+}
+
+/* ---------- render ---------- */
+function pk(r){ return r.boss+'|'+r.key; }
+function eff(r){
+  const p = state.pending.get(pk(r));
+  return p ? {...r, ...p} : r;
+}
+
+function sortedRows(){
+  const rows = state.rows.slice();
+  const val = r => eff(r);
+  const INF = Number.MAX_SAFE_INTEGER;
+  const k = state.sort;
+  if(!k.key) return rows;
+  const get = r => {
+    const v = val(r);
+    switch(k.key){
+      case 'boss':     return v.cn || '';
+      case 'diff':     return v.diff;
+      case 'attempts': return v.attempts;
+      case 'kills':    return v.kills;
+      case 'deaths':   return (v.attempts||0)-(v.kills||0);
+      case 'time':     return v.bestMs || INF;
+    }
+    return 0;
+  };
+  rows.sort((a,b)=>{
+    const x=get(a), y=get(b);
+    let c;
+    if(typeof x==='string') c = x.localeCompare(y, 'zh');
+    else c = x - y;
+    return c * k.dir;
+  });
+  return rows;
+}
+
+function sortBy(key){
+  if(state.sort.key === key) state.sort.dir *= -1;
+  else state.sort = {key, dir: (key==='boss'||key==='time'||key==='diff') ? 1 : -1};
+  renderTable();
+}
+
+function th(key, label, align, tip){
+  const on = state.sort.key===key;
+  const arrow = on ? (state.sort.dir>0 ? ' ↑' : ' ↓') : '';
+  const cls = 'sortable' + (on ? ' on' : '');
+  return `<th class="${cls}" style="${align?'text-align:right;':''}" data-sort="${key}"`
+       + (tip?` title="${tip}"`:'') + `>${label}<span class="ar">${arrow}</span></th>`;
+}
+
+function renderTable(){
+  const wrap=$('#tableWrap');
+  if(!state.rows.length){ wrap.innerHTML='<div class="empty">这个槽位里没有 Boss 记录</div>'; return; }
+  let html = `<table><thead><tr>
+      ${th('boss','Boss')}
+      ${th('diff','难度')}
+      ${th('attempts','挑战',1)}
+      ${th('kills','击杀',1)}
+      ${th('deaths','身陨',1)}
+      ${th('time','最佳用时',1)}
+    </tr></thead><tbody>`;
+  sortedRows().forEach(r=>{
+    const v=eff(r), raw=(v.attempts||0)-(v.kills||0), deaths=Math.max(raw,0);
+    const dirty = state.pending.has(pk(r));
+    html += `<tr data-k="${pk(r)}" class="${dirty?'dirty':''}">
+      ${bossCell(r)}
+      <td>${diffCell(r, v)}</td>
+      <td align="right"><input class="cell-in" data-f="attempts" value="${v.attempts}"></td>
+      <td align="right"><input class="cell-in" data-f="kills" value="${v.kills}"></td>
+      <td align="right">${raw<0
+        ? `<span class="deaths bad" title="击杀数大于挑战数，数据不一致，建议改回">${raw}</span>`
+        : `<span class="deaths ${deaths===0?'zero':(deaths>=3?'hot':'')}">${deaths}</span>`}</td>
+      <td align="right"><input class="cell-in time" data-f="bestMs" value="${fmtMs(v.bestMs)}"></td>
+    </tr>`;
+  });
+  wrap.innerHTML = html + '</tbody></table>';
+  wrap.querySelectorAll('th[data-sort]').forEach(t=>{
+    t.onclick = () => sortBy(t.dataset.sort);
+  });
+  bindCells();
+}
+
+function renderItems(){
+  const wrap=$('#itemWrap');
+  if(!state.items.length){ wrap.innerHTML='<div class="empty">这个槽位没有物品数据</div>'; $('#itemHint').textContent=''; return; }
+  const q=($('#inpItemSearch').value||'').trim().toLowerCase();
+  const nz=$('#chkItemNonZero').checked;
+  const list=state.items.filter(it=>{
+    if(nz && !(it.amount>0)) return false;
+    if(!q) return true;
+    return it.id.toLowerCase().includes(q) || (it.hint||'').toLowerCase().includes(q);
+  });
+  if(!list.length){ wrap.innerHTML='<div class="empty">没有匹配的物品</div>'; }
+  else {
+    let html=`<table><thead><tr>
+        <th style="width:44%">物品</th>
+        <th style="text-align:right">数量</th>
+        <th style="text-align:right">上限</th>
+        <th style="text-align:right">首次获得</th>
+      </tr></thead><tbody>`;
+    list.forEach(it=>{
+      const cur = state.itemPending.has(it.id) ? state.itemPending.get(it.id) : it.amount;
+      const dirty = state.itemPending.has(it.id);
+      const first = it.first ? it.first.slice(5,16).replace('.','.').replace('-',' ') : '—';
+      html += `<tr data-item="${it.id}" class="${dirty?'dirty':''}">
+        <td class="item-id">${it.id}${it.hint?`<span class="sub">${it.hint}</span>`:''}</td>
+        <td align="right"><input class="cell-in" data-f="amount" value="${cur}"></td>
+        <td align="right" class="num" style="color:var(--muted);font-size:11.5px">${it.max ?? '—'}</td>
+        <td align="right" class="num" style="color:var(--muted);font-size:11px">${first}</td>
+      </tr>`;
+    });
+    wrap.innerHTML=html+'</tbody></table>';
+  }
+  $('#itemHint').textContent = `共 ${state.items.length} 项，显示 ${list.length}`;
+  wrap.querySelectorAll('tbody tr').forEach(tr=>{
+    const id = tr.dataset.item;
+    const base = state.items.find(x=>x.id===id);
+    tr.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
+      inp.addEventListener('change', ()=>{
+        const val = Math.max(0, parseInt(inp.value||'0',10)||0);
+        inp.value = val;
+        if(val === base.amount) state.itemPending.delete(id);
+        else state.itemPending.set(id, val);
+        tr.classList.toggle('dirty', state.itemPending.has(id));
+        updateDirty();
+      });
+    });
+  });
+}
+
+function bossCell(r){
+  const q = r.verified ? '' : '<span class="q" title="中文名未核实（按资源名拼音推断），可在 boss_names.json 里修正">?</span>';
+  const en = r.en ? `<span class="sub">${r.en}</span>` : `<span class="sub">${r.boss}</span>`;
+  return `<td class="boss" title="${r.boss}">${r.cn}${q}${en}</td>`;
+}
+
+function diffCell(r, v){
+  const dv = state.moves.has(pk(r)) ? state.moves.get(pk(r)) : r.diff;
+  const opts = [1,2,3].map(d=>`<option value="${d}"${d===dv?' selected':''}>${d} · ${DIFF_LABEL(d)}</option>`).join('');
+  return `<select class="diff-sel d${dv}" data-f="diff" title="把这条战绩挪到其它难度下">${opts}</select>`;
+}
+
+function bindCells(){
+  document.querySelectorAll('#tableWrap tbody tr').forEach(tr=>{
+    const [boss,key] = tr.dataset.k.split('|');
+    const base = state.rows.find(r=>r.boss===boss&&r.key===key);
+    const dsel = tr.querySelector('select[data-f="diff"]');
+    if(dsel) dsel.addEventListener('change', ()=>{
+      const v = Number(dsel.value);
+      if(v === base.diff) state.moves.delete(pk(base)); else state.moves.set(pk(base), v);
+      dsel.className = 'diff-sel d'+v;
+      tr.classList.toggle('dirty', state.pending.has(pk(base)) || state.moves.has(pk(base)));
+      updateDirty();
+    });
+    tr.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } });
+      inp.addEventListener('change', ()=>{
+        const f=inp.dataset.f;
+        let val;
+        if(f==='bestMs'){ val = parseTime(inp.value); if(val===null){ inp.value=fmtMs(eff(base).bestMs); return; } inp.value=fmtMs(val); }
+        else { val = Math.max(0, parseInt(inp.value||'0',10)||0); inp.value=val; }
+        const cur = {...eff(base)}; cur[f]=val;
+        const d = state.pending.get(pk(base)) || {};
+        d[f]=val; state.pending.set(pk(base), d);
+        tr.classList.add('dirty');
+        const dd = Math.max((cur.attempts||0)-(cur.kills||0),0);
+        const de = tr.querySelector('.deaths');
+        de.textContent = dd; de.className='deaths '+(dd===0?'zero':(dd>=3?'hot':''));
+        updateDirty();
+      });
+    });
+  });
+}
+
+function DIFF_LABEL(d){ return {0:'残疾',1:'入阵者',2:'破局者',3:'逆天者',4:'六十六天'}[d]||d; }
+
+function updateDirty(){
+  const n = state.pending.size + state.moves.size + state.itemPending.size;
+  $('#dirtyCount').textContent = n;
+}
+
+/* ---------- payload ---------- */
+function buildReq(){
+  const edits=[];
+  for(const [k,v] of state.pending){
+    const [boss,key]=k.split('|');
+    edits.push({boss, key, ...v});
+  }
+  const moves=[];
+  for(const [k,v] of state.moves){ const [boss,key]=k.split('|'); moves.push({boss,key,toDiff:v}); }
+  const items=[];
+  for(const [id,v] of state.itemPending) items.push({id, amount:v});
+  return {
+    slot: state.cur,
+    scope: 'all',
+    difficulty: null,
+    totalDeaths: null,
+    slotDiffs: {},
+    moves, edits, items
+  };
+}
+function anyChange(req){
+  return req.edits.length || req.moves.length || req.items.length;
+}
+
+/* ---------- actions ---------- */
+async function preview(){
+  const req=buildReq();
+  if(!anyChange(req)){ toast('还没有任何改动'); return; }
+  try{
+    const r=await api('/api/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)});
+    state.lastPreview=r.changes;
+    $('#dlgTitle').textContent='变更预览 · '+r.changes.length+' 处';
+    $('#dlgBody').textContent = r.changes.length? r.changes.join('\n') : '没有实际变化（目标槽位里没有这些记录）';
+    $('#dlgOk').disabled = !r.changes.length;
+    $('#mask').classList.add('show');
+  }catch(e){ toast(e.message,true); }
+}
+async function writeNow(){
+  const req=buildReq();
+  if(!anyChange(req)){ toast('还没有任何改动'); return; }
+  const btn=$('#dlgOk'); btn.disabled=true; btn.textContent='写入中…';
+  try{
+    const r=await api('/api/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)});
+    $('#mask').classList.remove('show');
+    log(`✔ 已写入 ${r.changes.length} 处改动`, 'ok');
+    if(r.backup){ log('  备份：'+r.backup); toast(`已写入 ${r.applied||0} 处改动`); }
+    else { toast('没有可写入的改动（数值和存档一致）'); log('（没有实际改动，未写盘）'); }
+    state.pending.clear(); state.moves.clear(); state.itemPending.clear();
+    updateDirty();
+    await loadState();
+  }catch(e){ toast(e.message,true); log('✘ '+e.message,'err'); }
+  finally{ btn.disabled=false; btn.textContent='确认写入'; }
+}
+async function restore(){
+  const f=$('#selBackup').value; if(!f) return;
+  if(!confirm('用备份覆盖当前存档？\n'+f+'\n\n当前文件也会先备份一份。')) return;
+  try{
+    await api('/api/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file:f})});
+    log('✔ 已还原：'+f,'ok'); await loadState(); toast('已还原');
+  }catch(e){ toast(e.message,true); }
+}
+
+/* ---------- bind ---------- */
+const on = (sel, ev, fn) => { const el = $(sel); if (el) el.addEventListener(ev, fn); };
+const closeDlg = () => $('#mask').classList.remove('show');
+
+on('#inpItemSearch', 'input', () => { if(state.items.length) renderItems(); });
+on('#chkItemNonZero', 'change', () => { if(state.items.length) renderItems(); });
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    const tab = t.dataset.tab;
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+    document.querySelectorAll('.panel').forEach(pn =>
+      pn.classList.toggle('on', pn.id === 'panel' + tab.charAt(0).toUpperCase() + tab.slice(1)));
+  });
+});
+on('#btnRefresh', 'click', () => loadState().then(() => toast('已刷新')));
+on('#btnPreview2', 'click', preview);
+on('#btnWrite', 'click', preview);
+on('#dlgX', 'click', closeDlg);
+on('#dlgCancel', 'click', closeDlg);
+on('#dlgOk', 'click', writeNow);
+on('#mask', 'click', e => { if (e.target.id === 'mask') closeDlg(); });
+on('#btnRestore', 'click', restore);
+on('#btnDiscard', 'click', () => {
+  state.pending.clear(); state.moves.clear(); state.itemPending.clear();
+  updateDirty(); renderTable(); toast('已丢弃未提交修改');
+});
+
+loadState().catch(e=>{ toast(e.message,true); log('✘ '+e.message,'err'); });
+</script>
+</body>
+</html>

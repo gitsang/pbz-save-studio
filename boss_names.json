@@ -1,0 +1,210 @@
+{
+  "_version": 3,
+  "_comment": "影之刃零 Boss 中文名对照表。键 = 存档 BossRecord 内部键。名字以小黑盒『存档解析』Boss 图鉴为准；对应关系用『最佳用时』与图鉴卡片逐条比对。verified=false 表示图鉴里该卡是‘尚无记录’，只能按形态推断。",
+  "_cn_source": "小黑盒 存档解析 · Boss 图鉴（75 条 / 已击败 32）",
+  "BP_Monster_ZuoShang": {
+    "cn": "“组织”冥主：左殇",
+    "en": "Zuo Shang, Shadow Sovereign",
+    "verified": true
+  },
+  "BP_Monster_HookMan_HorseCartCombat": {
+    "cn": "“组织”猎杀者：追命",
+    "en": "The Hunt, Hunter of the Order",
+    "verified": true
+  },
+  "BP_Monster_HookMan_P2": {
+    "cn": "追命：六绝凶镰",
+    "en": "The Hunt, Sixfold Scythe",
+    "verified": true
+  },
+  "BP_Monster_HookMan": {
+    "cn": "少年左殇",
+    "en": "Young Zuo Shang",
+    "verified": false
+  },
+  "BP_Monster_PengMeng_Axe": {
+    "cn": "斧老大：彭猛",
+    "en": "Peng Meng, the Axemaster",
+    "verified": true
+  },
+  "BP_Monster_AHua_GuiTouDao": {
+    "cn": "新娘阿花",
+    "en": "Hua, Deadly Betrothed",
+    "verified": true
+  },
+  "BP_Monster_HuaQianXIao": {
+    "cn": "剑痴：花千笑",
+    "en": "Hua Qianxiao, Sword Fanatic",
+    "verified": true
+  },
+  "BP_Monster_JingYe": {
+    "cn": "亡命徒：荆野",
+    "en": "Jing Ye, the Outlaw",
+    "verified": true
+  },
+  "BP_Monster_ChiLian": {
+    "cn": "双蛇夫人：白赤练",
+    "en": "Bai Chilian, Lady of Twin Serpents",
+    "verified": true
+  },
+  "BP_Monster_ChiLian_P2": {
+    "cn": "白赤练：献祭之蛇",
+    "en": "Bai Chilian, Sacrificial Serpent",
+    "verified": true
+  },
+  "BP_Monster_YuCong_FirstTime": {
+    "cn": "三张脸的诡异魔偶",
+    "en": "Aberrant Three-Faced Puppet",
+    "verified": false
+  },
+  "BP_Monster_Zhuobi": {
+    "cn": "守门人拙壁",
+    "en": "Zhuo Bi, the Gatekeeper",
+    "verified": true
+  },
+  "BP_Monster_BiYuan": {
+    "cn": "天玄派：毕远掌门",
+    "en": "Master Bi Yuan, Tianxuan Sect",
+    "verified": true
+  },
+  "BP_Monster_CanQu_BiHai": {
+    "cn": "苦叶寺：碧海大师",
+    "en": "Master Bi Hai, Kuye Temple",
+    "verified": true
+  },
+  "BP_Monster_Danghui": {
+    "cn": "操偶师：荡秽",
+    "en": "Dusk, the Puppeteer",
+    "verified": true
+  },
+  "BP_Monster_FemaleVessel_YuZan": {
+    "cn": "三号·乐师偶：“玉瓒”",
+    "en": "Yuzan, No.3 Musician Puppet",
+    "verified": true
+  },
+  "BP_Monster_MuXiaoKui": {
+    "cn": "“组织”少主：沐小葵",
+    "en": "Mu Xiaokui, Young Mistress",
+    "verified": true
+  },
+  "BP_Monster_MuXiaoKui_P2": {
+    "cn": "沐小葵：铁玉女王",
+    "en": "Mu Xiaokui, Queen of Iron and Jade",
+    "verified": true
+  },
+  "BP_Monster_TieGui": {
+    "cn": "少主护卫：铁鬼",
+    "en": "Iron Fiend",
+    "verified": true
+  },
+  "BP_Monster_LuanShi": {
+    "cn": "拳痴：铁狂",
+    "en": "Stone Hand Iron Fever",
+    "verified": true
+  },
+  "BP_Monster_Yuu": {
+    "cn": "少主护卫：玉妖",
+    "en": "Jade Dancer",
+    "verified": true
+  },
+  "BP_Monster_GuiChai_Red": {
+    "cn": "鬼差队长：火流星",
+    "en": "Blaze, Shadow Warden Captain",
+    "verified": true
+  },
+  "BP_Monster_GuiChai_Red_P2": {
+    "cn": "火流星：磷火意识",
+    "en": "Blaze, Phosphor Consciousness",
+    "verified": true
+  },
+  "BP_Monster_GuiChai_Yellow_MoDao": {
+    "cn": "鬼差高手：斩骑",
+    "en": "Cavalrybane, Elite Shadow Warden",
+    "verified": true
+  },
+  "BP_Monster_GuiChai_Yellow_ShuangGou": {
+    "cn": "鬼差高手：勾魂",
+    "en": "Soulclaimer, Elite Shadow Warden",
+    "verified": false
+  },
+  "BP_Monster_WuXuan": {
+    "cn": "堕落将军：武轩",
+    "en": "Wu Xuan, the Fallen General",
+    "verified": true
+  },
+  "BP_Monster_GuWanYue": {
+    "cn": "女妖骨婉约",
+    "en": "Gu Wanyue, the Wailing Wraith",
+    "verified": true
+  },
+  "BP_Monster_Maddoctor_Elite": {
+    "cn": "神医：谢秋冬",
+    "en": "Xie Qiudong, the Divine Healer",
+    "verified": false
+  },
+  "BP_Monster_YouLong_SecondBrother": {
+    "cn": "水行帮主：游龙",
+    "en": "You Loong, Blackwater Crew",
+    "verified": false
+  },
+  "BP_Monster_ChangHong_Spear": {
+    "cn": "“雷枪”：长鸿",
+    "en": "Chang Hong, the Thunder Spear",
+    "verified": false
+  },
+  "BP_Monster_ChangHong_P2": {
+    "cn": "长鸿：雷电枪骑",
+    "en": "Chang Hong, the Thunder Lancer",
+    "verified": false
+  },
+  "BP_Monster_LionDancer": {
+    "cn": "被面具控制的舞狮尊主：烈焰",
+    "en": "Flame, Lion Dance Grandmaster",
+    "verified": false
+  },
+  "BP_Monster_LionDancer_P2": {
+    "cn": "舞狮尊主的最后一舞",
+    "en": "Lion Dance Master's Final Dance",
+    "verified": false
+  },
+  "BP_Monster_QiShu_Huo": {
+    "cn": "灭法之法：炎茹",
+    "en": "Acolyte Yanru",
+    "verified": true
+  },
+  "BP_Monster_QiShu_Lei": {
+    "cn": "灭法之法：雷婷",
+    "en": "Acolyte Lei Ting",
+    "verified": false
+  },
+  "BP_Monster_WanJun_JinGua": {
+    "cn": "巨锤客：万钧",
+    "en": "Wan Jun, the Coppermaul",
+    "verified": true
+  },
+  "BP_Monster_MoTian_LongZhu_01": {
+    "cn": "金面具黑衣人",
+    "en": "The Gold-Masked One",
+    "verified": true
+  },
+  "BP_Monster_EMei_Sword_Top": {
+    "cn": "红衣女剑客",
+    "en": "Red, Mysterious Swordswoman",
+    "verified": true
+  },
+  "BP_Monster_HuaShan_Blue": {
+    "cn": "七星剑阵：大师兄",
+    "en": "Chief Disciple, Seven-Star Formation",
+    "verified": true
+  },
+  "BP_Monster_HuaShan_JianOu": {
+    "cn": "大师兄的绝望剑意",
+    "en": "Chief Disciple, Sword of Despair",
+    "verified": true
+  },
+  "BP_Monster_MobMan_Elite_Sword": {
+    "cn": "疯狂暴徒：残钢",
+    "en": "Jagged Steel, the Frenzied Brute",
+    "verified": true
+  }
+}
