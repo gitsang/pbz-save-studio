@@ -272,30 +272,6 @@ def apply_patch(sf, req, commit):
             note(f"{s.name}: 难度 {T.DIFF_NAMES.get(old, old)} → {T.DIFF_NAMES.get(int(dv), dv)}")
 
     # 把某条战报挪到别的难度下：键名 <周目>_<难度> 重命名，生涯战报键名 <难度>
-    for mv in req.get("moves") or []:
-        boss, key, to_diff = mv["boss"], mv["key"], int(mv["toDiff"])
-        parts = key.split("_")
-        src_diff = int(parts[-1])
-        cycle = parts[0] if len(parts) > 1 else "0"
-        if src_diff == to_diff:
-            continue
-        newkey = f"{cycle}_{to_diff}"
-        for s in targets:
-            rs = ((s.json.get("BossRecord") or {}).get(boss) or {}).get("Records")
-            if not rs or key not in rs:
-                continue
-            if commit:
-                rs[newkey] = rs.pop(key)
-                s.mark()
-            note(f"{s.name} / {boss.split('_')[-1]}: 记录 {key} → {newkey}")
-        if adv:
-            br = ((adv.json.get("BossRecord") or {}).get(boss) or {}).get("Records")
-            if br and str(src_diff) in br:
-                if commit:
-                    br[str(to_diff)] = br.pop(str(src_diff))
-                    adv.mark()
-                note(f"生涯战报 / {boss.split('_')[-1]}: 记录 {src_diff} → {to_diff}")
-
     deaths_want = req.get("totalDeaths")
     if deaths_want is not None:
         for s in sf.slots:
@@ -354,6 +330,32 @@ def apply_patch(sf, req, commit):
             note(f"✗ 找不到 {boss.split('_')[-1]} [{key}]：所选范围里的存档没有这条记录")
         elif not hit:
             note(f"= {boss.split('_')[-1]} [{key}]：填的数值和存档里一样，没有改动")
+
+    for mv in req.get("moves") or []:
+        boss, key, to_diff = mv["boss"], mv["key"], int(mv["toDiff"])
+        parts = key.split("_")
+        src_diff = int(parts[-1])
+        cycle = parts[0] if len(parts) > 1 else "0"
+        if src_diff == to_diff:
+            continue
+        newkey = f"{cycle}_{to_diff}"
+        for s in targets:
+            rs = ((s.json.get("BossRecord") or {}).get(boss) or {}).get("Records")
+            if not rs or key not in rs:
+                continue
+            if commit:
+                rs[newkey] = rs.pop(key)
+                s.mark()
+            real[0] += 1
+            note(f"{s.name} / {boss.split('_')[-1]}: 记录 {key} → {newkey}")
+        if adv:
+            br = ((adv.json.get("BossRecord") or {}).get(boss) or {}).get("Records")
+            if br and str(src_diff) in br:
+                if commit:
+                    br[str(to_diff)] = br.pop(str(src_diff))
+                    adv.mark()
+                real[0] += 1
+                note(f"生涯战报 / {boss.split('_')[-1]}: 记录 {src_diff} → {to_diff}")
 
     for e in req.get("items") or []:
         iid = e["id"]
@@ -467,12 +469,17 @@ class Handler(BaseHTTPRequestHandler):
             req = json.loads(self.rfile.read(n) or b"{}")
             with LOCK:
                 if u.path == "/api/preview":
-                    sf = load()
+                    # 关键：预览必须改在“一次性副本”上，绝不能碰缓存里的对象，
+                    # 否则预览就把内存改掉了，紧接着的写入会误判为“数值没变”。
+                    sf = T.SaveFile(load().path, OODLE)
                     changes, _, n = apply_patch(sf, req, commit=False)
                     return self._send(200, {"changes": changes, "applied": n})
                 if u.path == "/api/apply":
-                    sf = load()
+                    # 同理，写入前也从磁盘重新读一份，保证判断基准是磁盘上的真实值
+                    sf = load(force=True)
                     changes, bak, n = apply_patch(sf, req, commit=True)
+                    if n == 0:
+                        load(force=True)
                     return self._send(200, {"changes": changes, "backup": bak, "applied": n})
                 if u.path == "/api/restore":
                     p = sav_path()
