@@ -203,7 +203,8 @@ def global_rows(sf):
             att, kil = r.get("AttemptCount", 0), r.get("KillCount", 0)
             out.append(with_name({"boss": bname, "key": k, "diff": int(k),
                                   "attempts": att, "kills": kil, "deaths": max(att - kil, 0),
-                                  "bestMs": r.get("BestTimeMs")}))
+                                  "bestMs": r.get("BestTimeMs"),
+                                  "cycle": r.get("Cycle", 0)}))
     out.sort(key=lambda x: (-x["diff"], -x["deaths"], x["boss"]))
     return out
 

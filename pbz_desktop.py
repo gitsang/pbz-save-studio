@@ -66,6 +66,7 @@ def main():
     ap.add_argument("--sav", default=None)
     ap.add_argument("--oodle", default=None)
     ap.add_argument("--view", default=None, help="启动时的默认视图：table / card")
+    ap.add_argument("--tab", default=None, help="启动时打开的标签页：boss / items / global")
     args = ap.parse_args()
 
     if args.sav:
@@ -86,8 +87,13 @@ def main():
     srv = ThreadingHTTPServer(("127.0.0.1", port), W.Handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     url = f"http://127.0.0.1:{port}/"
+    qs = []
     if args.view:
-        url += f"?view={args.view}"
+        qs.append(f"view={args.view}")
+    if args.tab:
+        qs.append(f"tab={args.tab}")
+    if qs:
+        url += "?" + "&".join(qs)
     log(f"start {url}  sav={sav}")
 
     wa = work_area()

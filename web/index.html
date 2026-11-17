@@ -312,7 +312,7 @@
       <div class="seal">刃</div>
       <h1>存档工坊</h1>
       <span class="zh">影之刃零</span>
-      <span class="ver">v1.1.0</span>
+      <span class="ver">v1.2.0</span>
     </div>
     <span class="tag" id="tagGame">检测中…</span>
     <div class="path" id="savPath" title="">—</div>
@@ -338,6 +338,7 @@
       <div class="tabs">
         <button class="tab on" data-tab="boss">Boss 战报<span class="cnt-badge" id="bossCount"></span></button>
         <button class="tab" data-tab="items">物品<span class="cnt-badge" id="itemCount"></span></button>
+        <button class="tab" data-tab="global">生涯战报<span class="cnt-badge" id="globalCount"></span></button>
         <span class="hint" id="curHint"></span>
         <div class="vtoggle" id="vtoggle" title="切换表格 / 卡片视图">
           <button data-view="table">表格</button>
@@ -356,6 +357,13 @@
           <span class="hint" id="itemHint" style="margin-left:auto"></span>
         </div>
         <div class="panel-body" id="itemWrap"><div class="empty">—</div></div>
+      </section>
+
+      <section class="panel" id="panelGlobal">
+        <div class="panel-head">
+          <span class="hint" style="margin:0">跨档、跨周目累计的账本（Advanced），回档不会回退；改 Boss 战报时会自动同步</span>
+        </div>
+        <div class="panel-body" id="globalWrap"><div class="empty">—</div></div>
       </section>
 
       <div class="footbar">
@@ -387,7 +395,7 @@
 const $ = s => document.querySelector(s);
 const DIFF_PILL = d => `pill d${d}`;
 const _qv = new URLSearchParams(location.search).get('view');
-const state = { slots:[], cur:null, rows:[], items:[], pending:new Map(), itemPending:new Map(), moves:new Map(), sort:{key:null,dir:1}, view:(_qv || localStorage.getItem('pbz.view') || 'table'), lastPreview:null };
+const state = { slots:[], cur:null, rows:[], items:[], global:[], pending:new Map(), itemPending:new Map(), moves:new Map(), sort:{key:null,dir:1}, view:(_qv || localStorage.getItem('pbz.view') || 'table'), lastPreview:null };
 
 /* ---------- utils ---------- */
 function fmtMs(ms){
@@ -468,6 +476,9 @@ async function selectSlot(name, silent){
   state.items = di.items;
   renderItems();
   const ic=$('#itemCount'); if(ic) ic.textContent = state.items.length;
+  state.global = d.global || [];
+  renderGlobal();
+  const gc=$('#globalCount'); if(gc) gc.textContent = state.global.length;
   const sl = state.slots.find(x=>x.name===name);
   $('#curHint').textContent = sl ? `${sl.diffName} · 周目 ${sl.cycle} · 死亡 ${sl.deaths} · 余 ${sl.days} 天` : '';
 }
@@ -560,6 +571,33 @@ function renderTable(){
     t.onclick = () => sortBy(t.dataset.sort);
   });
   bindCells();
+}
+
+function renderGlobal(){
+  const wrap = $('#globalWrap');
+  if(!state.global.length){ wrap.innerHTML = '<div class="empty">暂无生涯战报</div>'; return; }
+  let html = `<table><thead><tr>
+      <th>Boss</th>
+      <th style="width:13%">难度</th>
+      <th style="text-align:right;width:10%">周目</th>
+      <th style="text-align:right;width:10%">挑战</th>
+      <th style="text-align:right;width:10%">击杀</th>
+      <th style="text-align:right;width:10%">身陨</th>
+      <th style="text-align:right;width:15%">最佳用时</th>
+    </tr></thead><tbody>`;
+  state.global.forEach(r=>{
+    const dd = Math.max(r.attempts - r.kills, 0);
+    html += `<tr>
+      ${bossCell(r)}
+      <td><span class="${DIFF_PILL(r.diff)}">${r.diff} · ${String(DIFF_LABEL(r.diff)).split('(')[0]}</span></td>
+      <td align="right" class="num">${r.cycle ?? 0}</td>
+      <td align="right" class="num">${r.attempts}</td>
+      <td align="right" class="num">${r.kills}</td>
+      <td align="right"><span class="deaths ${dd===0?'zero':(dd>=3?'hot':'')}">${dd}</span></td>
+      <td align="right" class="num">${fmtMs(r.bestMs) || '—'}</td>
+    </tr>`;
+  });
+  wrap.innerHTML = html + '</tbody></table>';
 }
 
 function renderItems(){
@@ -760,14 +798,16 @@ const closeDlg = () => $('#mask').classList.remove('show');
 
 on('#inpItemSearch', 'input', () => { if(state.items.length) renderItems(); });
 on('#chkItemNonZero', 'change', () => { if(state.items.length) renderItems(); });
+function activateTab(name){
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(pn =>
+    pn.classList.toggle('on', pn.id === 'panel' + name.charAt(0).toUpperCase() + name.slice(1)));
+}
 document.querySelectorAll('.tab').forEach(t => {
-  t.addEventListener('click', () => {
-    const tab = t.dataset.tab;
-    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
-    document.querySelectorAll('.panel').forEach(pn =>
-      pn.classList.toggle('on', pn.id === 'panel' + tab.charAt(0).toUpperCase() + tab.slice(1)));
-  });
+  t.addEventListener('click', () => activateTab(t.dataset.tab));
 });
+const _qt = new URLSearchParams(location.search).get('tab');
+if(_qt) setTimeout(() => activateTab(_qt), 300);
 document.querySelectorAll('#vtoggle button').forEach(b => {
   b.addEventListener('click', () => {
     state.view = b.dataset.view;
