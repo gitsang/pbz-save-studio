@@ -65,6 +65,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sav", default=None)
     ap.add_argument("--oodle", default=None)
+    ap.add_argument("--view", default=None, help="启动时的默认视图：table / card")
     args = ap.parse_args()
 
     if args.sav:
@@ -85,6 +86,8 @@ def main():
     srv = ThreadingHTTPServer(("127.0.0.1", port), W.Handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     url = f"http://127.0.0.1:{port}/"
+    if args.view:
+        url += f"?view={args.view}"
     log(f"start {url}  sav={sav}")
 
     wa = work_area()

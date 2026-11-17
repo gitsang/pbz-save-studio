@@ -91,6 +91,45 @@
     font-family:var(--mono);font-size:10.5px;color:var(--muted);
     background:#f2ece0;border-radius:999px;padding:1px 7px;margin-left:6px
   }
+  .vtoggle{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;margin-bottom:6px}
+  .vtoggle button{
+    border:none;background:#fff;padding:4px 11px;font-size:11.5px;color:var(--muted);transition:.15s
+  }
+  .vtoggle button + button{border-left:1px solid var(--line)}
+  .vtoggle button.on{background:#f6f1e6;color:var(--ink);font-weight:600}
+  .vtoggle button:hover{color:var(--ink)}
+
+  /* ---------- boss 卡片 ---------- */
+  .bcard-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));
+    gap:12px;padding:16px 20px 22px
+  }
+  .bcard{
+    border:1px solid var(--line);border-radius:10px;background:var(--card);
+    padding:11px 13px 10px;transition:.15s;position:relative;overflow:hidden
+  }
+  .bcard:hover{border-color:#d8cfbe;box-shadow:0 6px 18px -14px rgba(80,60,40,.5)}
+  .bcard.dirty{border-color:#e0b9ad;background:#fffaf7}
+  .bcard.dirty::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--red)}
+  .bc-h{display:flex;align-items:flex-start;gap:8px}
+  .bc-h .diff-sel{flex:none}
+  .bc-name{flex:1;min-width:0;font-size:13px;font-weight:600;line-height:1.35;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bc-name .sub{display:block;font-family:var(--mono);font-size:10px;color:var(--muted);
+    font-weight:400;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bc-stats{display:flex;gap:6px;margin-top:10px}
+  .bc-stat{flex:1;background:#faf7ef;border:1px solid var(--line-2);border-radius:7px;
+    padding:5px 7px;text-align:center}
+  .bc-stat span.lb{display:block;font-size:10px;color:var(--muted);letter-spacing:.08em;margin-bottom:1px}
+  .bc-stat .cell-in{width:100%;text-align:center;background:transparent;border:none;
+    font-family:var(--mono);font-size:13.5px;padding:0;height:20px}
+  .bc-stat .cell-in:focus{background:#fff;box-shadow:0 0 0 2px rgba(154,123,63,.15);border-radius:4px}
+  .bc-stat .deaths{font-family:var(--mono);font-size:13.5px;display:block;height:20px;line-height:20px}
+  .bc-foot{display:flex;align-items:center;gap:6px;margin-top:6px;
+    font-size:10px;color:var(--muted);letter-spacing:.08em}
+  .bc-foot .cell-in{flex:1;text-align:right;font-family:var(--mono);font-size:12px;
+    background:#faf7ef;border:1px solid var(--line-2);border-radius:6px;height:24px;padding:0 7px}
+
   .panel{display:none;flex:1;min-height:0;flex-direction:column}
   .panel.on{display:flex}
   @media (max-width:1100px){
@@ -273,10 +312,11 @@
       <div class="seal">刃</div>
       <h1>存档工坊</h1>
       <span class="zh">影之刃零</span>
-      <span class="ver">v1.0.0</span>
+      <span class="ver">v1.1.0</span>
     </div>
     <span class="tag" id="tagGame">检测中…</span>
     <div class="path" id="savPath" title="">—</div>
+    <button class="btn" id="btnOpenFolder" title="在资源管理器里定位当前存档">打开存档目录</button>
     <button class="btn" id="btnRefresh">刷新</button>
   </header>
 
@@ -299,6 +339,10 @@
         <button class="tab on" data-tab="boss">Boss 战报<span class="cnt-badge" id="bossCount"></span></button>
         <button class="tab" data-tab="items">物品<span class="cnt-badge" id="itemCount"></span></button>
         <span class="hint" id="curHint"></span>
+        <div class="vtoggle" id="vtoggle" title="切换表格 / 卡片视图">
+          <button data-view="table">表格</button>
+          <button data-view="card">卡片</button>
+        </div>
       </div>
 
       <section class="panel on" id="panelBoss">
@@ -342,7 +386,8 @@
 <script>
 const $ = s => document.querySelector(s);
 const DIFF_PILL = d => `pill d${d}`;
-const state = { slots:[], cur:null, rows:[], items:[], pending:new Map(), itemPending:new Map(), moves:new Map(), sort:{key:null,dir:1}, lastPreview:null };
+const _qv = new URLSearchParams(location.search).get('view');
+const state = { slots:[], cur:null, rows:[], items:[], pending:new Map(), itemPending:new Map(), moves:new Map(), sort:{key:null,dir:1}, view:(_qv || localStorage.getItem('pbz.view') || 'table'), lastPreview:null };
 
 /* ---------- utils ---------- */
 function fmtMs(ms){
@@ -479,6 +524,15 @@ function th(key, label, align, tip){
 function renderTable(){
   const wrap=$('#tableWrap');
   if(!state.rows.length){ wrap.innerHTML='<div class="empty">这个槽位里没有 Boss 记录</div>'; return; }
+  document.querySelectorAll('#vtoggle button').forEach(b =>
+    b.classList.toggle('on', b.dataset.view === state.view));
+
+  if(state.view === 'card'){
+    wrap.innerHTML = `<div class="bcard-grid">` + sortedRows().map(cardHtml).join('') + `</div>`;
+    bindCells();
+    return;
+  }
+
   let html = `<table><thead><tr>
       ${th('boss','Boss')}
       ${th('diff','难度')}
@@ -557,6 +611,33 @@ function renderItems(){
   });
 }
 
+function cardHtml(r){
+  const v = eff(r), raw = (v.attempts||0)-(v.kills||0), deaths = Math.max(raw,0);
+  const dirty = state.pending.has(pk(r)) || state.moves.has(pk(r));
+  const q = r.verified ? '' : '<span class="q" title="中文名未核实，可在 boss_names.json 里修正">?</span>';
+  const dcls = raw < 0 ? 'bad' : (deaths===0 ? 'zero' : (deaths>=3 ? 'hot' : ''));
+  const dval = raw < 0 ? raw : deaths;
+  const dtitle = raw < 0 ? ' title="击杀数大于挑战数，数据不一致"' : '';
+  return `<div class="bcard${dirty?' dirty':''}" data-k="${pk(r)}" title="${r.boss}">
+    <div class="bc-h">
+      <div class="bc-name">${r.cn}${q}<span class="sub">${r.en || r.boss}</span></div>
+      ${diffCell(r, v)}
+    </div>
+    <div class="bc-stats">
+      <label class="bc-stat"><span class="lb">挑战</span>
+        <input class="cell-in" data-f="attempts" value="${v.attempts}"></label>
+      <label class="bc-stat"><span class="lb">击杀</span>
+        <input class="cell-in" data-f="kills" value="${v.kills}"></label>
+      <div class="bc-stat"><span class="lb">身陨</span>
+        <span class="deaths ${dcls}"${dtitle}>${dval}</span></div>
+    </div>
+    <div class="bc-foot">
+      <span>最佳用时</span>
+      <input class="cell-in time" data-f="bestMs" value="${fmtMs(v.bestMs)}">
+    </div>
+  </div>`;
+}
+
 function bossCell(r){
   const q = r.verified ? '' : '<span class="q" title="中文名未核实（按资源名拼音推断），可在 boss_names.json 里修正">?</span>';
   const en = r.en ? `<span class="sub">${r.en}</span>` : `<span class="sub">${r.boss}</span>`;
@@ -570,7 +651,7 @@ function diffCell(r, v){
 }
 
 function bindCells(){
-  document.querySelectorAll('#tableWrap tbody tr').forEach(tr=>{
+  document.querySelectorAll('#tableWrap [data-k]').forEach(tr=>{
     const [boss,key] = tr.dataset.k.split('|');
     const base = state.rows.find(r=>r.boss===boss&&r.key===key);
     const dsel = tr.querySelector('select[data-f="diff"]');
@@ -592,9 +673,12 @@ function bindCells(){
         const d = state.pending.get(pk(base)) || {};
         d[f]=val; state.pending.set(pk(base), d);
         tr.classList.add('dirty');
-        const dd = Math.max((cur.attempts||0)-(cur.kills||0),0);
+        const rawd = (cur.attempts||0)-(cur.kills||0), dd = Math.max(rawd,0);
         const de = tr.querySelector('.deaths');
-        de.textContent = dd; de.className='deaths '+(dd===0?'zero':(dd>=3?'hot':''));
+        if(de){
+          de.textContent = rawd < 0 ? rawd : dd;
+          de.className = 'deaths ' + (rawd<0 ? 'bad' : (dd===0?'zero':(dd>=3?'hot':'')));
+        }
         updateDirty();
       });
     });
@@ -683,6 +767,19 @@ document.querySelectorAll('.tab').forEach(t => {
     document.querySelectorAll('.panel').forEach(pn =>
       pn.classList.toggle('on', pn.id === 'panel' + tab.charAt(0).toUpperCase() + tab.slice(1)));
   });
+});
+document.querySelectorAll('#vtoggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    state.view = b.dataset.view;
+    localStorage.setItem('pbz.view', state.view);
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x.dataset.tab === 'boss'));
+    document.querySelectorAll('.panel').forEach(pn => pn.classList.toggle('on', pn.id === 'panelBoss'));
+    renderTable();
+  });
+});
+on('#btnOpenFolder', 'click', async () => {
+  try { const r = await api('/api/open-folder', {method:'POST'}); toast('已在资源管理器打开'); }
+  catch(e){ toast(e.message, true); }
 });
 on('#btnRefresh', 'click', () => loadState().then(() => toast('已刷新')));
 on('#btnPreview2', 'click', preview);

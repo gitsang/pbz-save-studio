@@ -409,6 +409,18 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _open_folder(self):
+        try:
+            p = sav_path()
+            target = os.path.normpath(p)
+            if os.path.exists(target):
+                subprocess.Popen(["explorer", "/select,", target])
+            else:
+                subprocess.Popen(["explorer", os.path.dirname(target)])
+            return self._send(200, {"ok": True, "path": p})
+        except Exception as e:
+            return self._send(500, {"error": str(e)})
+
     def do_GET(self):
         u = urlparse(self.path)
         try:
@@ -437,6 +449,8 @@ class Handler(BaseHTTPRequestHandler):
                 except OSError:
                     pass
                 return self._send(200, {"ok": True})
+            if u.path == "/api/open-folder":
+                return self._open_folder()
             if u.path == "/api/items":
                 q = parse_qs(u.query)
                 name = (q.get("slot") or [None])[0]
@@ -468,6 +482,8 @@ class Handler(BaseHTTPRequestHandler):
             n = int(self.headers.get("Content-Length") or 0)
             req = json.loads(self.rfile.read(n) or b"{}")
             with LOCK:
+                if u.path == "/api/open-folder":
+                    return self._open_folder()
                 if u.path == "/api/preview":
                     # 关键：预览必须改在“一次性副本”上，绝不能碰缓存里的对象，
                     # 否则预览就把内存改掉了，紧接着的写入会误判为“数值没变”。

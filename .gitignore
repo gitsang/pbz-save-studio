@@ -15,7 +15,9 @@ _run.log
 server.log
 pbz_aes_key.txt
 oodle_path.txt
-_shot.png
+_shot*.png
+_zoom*.png
+_icon_preview.png
 *.sav
 *.sav.bak-*
 *.sav.bak-before-restore-*
