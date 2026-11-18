@@ -63,7 +63,8 @@ def free_port():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--sav", default=None)
+    ap.add_argument("--sav", default=None, help="手动指定存档文件（非 Steam 版用）")
+    ap.add_argument("--exe", default=None, help="手动指定游戏主程序 PBZ.exe（用于还原密钥）")
     ap.add_argument("--oodle", default=None)
     ap.add_argument("--view", default=None, help="启动时的默认视图：table / card")
     ap.add_argument("--tab", default=None, help="启动时打开的标签页：boss / items / global")
@@ -71,10 +72,13 @@ def main():
 
     if args.sav:
         T.find_sav = lambda: args.sav
+    if args.exe:
+        T.find_exe = lambda: args.exe
 
     try:
         W.OODLE = T.Oodle(args.oodle)
         sav = W.sav_path()
+        log(f"exe={T.find_exe() if not args.exe else args.exe}")
         W.load()          # 先读一次，密钥/解码有问题在这里就报出来
     except Exception as e:
         fatal(e)
@@ -102,6 +106,29 @@ def main():
     log(f"workarea={wa} window={win_w}x{win_h}")
 
     import webview
+
+    class Bridge:
+        """给前端用的原生能力：打开文件选择框"""
+        def pick_save(self):
+            try:
+                w = webview.windows[0]
+                r = w.create_file_dialog(
+                    webview.OPEN_DIALOG, allow_multiple=False,
+                    file_types=("存档文件 (*.sav;*.sav.bak-*)", "所有文件 (*.*)"))
+                return r[0] if r else ""
+            except Exception:
+                return ""
+
+        def pick_exe(self):
+            try:
+                w = webview.windows[0]
+                r = w.create_file_dialog(
+                    webview.OPEN_DIALOG, allow_multiple=False,
+                    file_types=("程序 (*.exe)", "所有文件 (*.*)"))
+                return r[0] if r else ""
+            except Exception:
+                return ""
+
     webview.create_window(
         "影之刃零 · 存档工坊",
         url,
@@ -110,6 +137,7 @@ def main():
         min_size=(1000, 620),
         background_color="#f6f3ec",
         text_select=False,
+        js_api=Bridge(),
     )
     try:
         webview.start()

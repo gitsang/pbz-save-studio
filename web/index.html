@@ -46,6 +46,7 @@
   }
   .path{
     margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--muted);
+    cursor:pointer;text-align:left;
     max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     padding:5px 10px;border:1px dashed var(--line);border-radius:6px;background:#fdfbf6
   }
@@ -53,6 +54,7 @@
     font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);
     color:var(--ink-2);background:#fdfbf6;white-space:nowrap
   }
+  .path.manual{color:var(--gold);border-color:#dcc9a4;background:#fdf8ee}
   .tag.warn{border-color:#e8c4b8;background:var(--red-soft);color:#8d2f22}
   .tag.ok{border-color:#cfe0d4;background:#eef5ef;color:var(--green)}
 
@@ -315,7 +317,7 @@
       <span class="ver">v1.2.0</span>
     </div>
     <span class="tag" id="tagGame">检测中…</span>
-    <div class="path" id="savPath" title="">—</div>
+    <button class="path" id="savPath" title="点击手动指定存档位置">—</button>
     <button class="btn" id="btnOpenFolder" title="在资源管理器里定位当前存档">打开存档目录</button>
     <button class="btn" id="btnRefresh">刷新</button>
   </header>
@@ -389,10 +391,43 @@
   </div>
 </div>
 
+<div class="mask" id="pathMask">
+  <div class="dlg" style="width:min(660px,92vw)">
+    <div class="dlg-h"><h3>存档位置</h3><button class="close" id="pathX">×</button></div>
+    <div class="dlg-b" style="font-family:inherit;white-space:normal;font-size:12.5px;line-height:1.9">
+      <label style="font-size:11px;color:var(--muted);letter-spacing:.08em">存档文件 PBZSaveGame.sav</label>
+      <div style="display:flex;gap:8px;margin:4px 0 12px">
+        <input id="inpSav" style="flex:1;min-width:0" placeholder="留空 = 自动探测（Steam 库）">
+        <button class="btn" id="btnPickSav">浏览…</button>
+      </div>
+      <label style="font-size:11px;color:var(--muted);letter-spacing:.08em">游戏主程序 PBZ.exe（可选）</label>
+      <div style="display:flex;gap:8px;margin:4px 0 12px">
+        <input id="inpExe" style="flex:1;min-width:0" placeholder="换渠道（WeGame 等）时用来重新推导密钥">
+        <button class="btn" id="btnPickExe">浏览…</button>
+      </div>
+      <p style="margin:0;font-size:11.5px;color:var(--muted);line-height:1.75">
+        换渠道时建议两个都填：存档在 WeGame 的 userdata 里，主程序在 WeGame 安装目录。<br>
+        只填存档也能试，但密钥要从别处推导，可能打不开。
+      </p>
+    </div>
+    <div class="dlg-f">
+      <button class="btn" id="pathAuto">恢复自动探测</button>
+      <button class="btn" id="pathCancel">取消</button>
+      <button class="btn primary" id="pathOk">应用</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 const $ = s => document.querySelector(s);
+window.addEventListener('error', e => {
+  try{ fetch('/api/debug?m=' + encodeURIComponent('JSERR ' + e.message + ' @' + (e.filename||'') + ':' + e.lineno + ':' + e.colno)); }catch(_){}
+});
+window.addEventListener('unhandledrejection', e => {
+  try{ fetch('/api/debug?m=' + encodeURIComponent('JSREJ ' + (e.reason && (e.reason.stack||e.reason.message) || e.reason))); }catch(_){}
+});
 const DIFF_PILL = d => `pill d${d}`;
 const _qv = new URLSearchParams(location.search).get('view');
 const state = { slots:[], cur:null, rows:[], items:[], global:[], pending:new Map(), itemPending:new Map(), moves:new Map(), sort:{key:null,dir:1}, view:(_qv || localStorage.getItem('pbz.view') || 'table'), lastPreview:null };
@@ -427,7 +462,8 @@ async function api(path, opt){
 async function loadState(){
   const s = await api('/api/state');
   state.slots = s.slots;
-  $('#savPath').textContent = s.sav;
+  $('#savPath').textContent = (s.savSource === 'manual' ? '✎ ' : '') + s.sav;
+  $('#savPath').classList.toggle('manual', s.savSource === 'manual');
   $('#savPath').title = s.sav;
   $('#slotCount').textContent = s.slots.length + ' 档';
   const g = $('#tagGame');
@@ -449,7 +485,9 @@ async function loadState(){
   const bs=$('#selBackup'); bs.innerHTML='';
   (s.backups||[]).forEach(b=>{
     const o=document.createElement('option'); o.value=b.file;
-    o.textContent=`${b.time}  ·  ${(b.size/1048576).toFixed(2)} MB`; bs.appendChild(o);
+    const mb = Number(b && b.size || 0) / 1048576;
+    o.textContent = `${b.time}  ·  ${mb.toFixed(2)} MB`;
+    bs.appendChild(o);
   });
   const bc=$('#backupCount'); if(bc) bc.textContent = (s.backups||[]).length ? (s.backups.length + ' 份') : '';
   if(!(s.backups||[]).length){
@@ -817,6 +855,42 @@ document.querySelectorAll('#vtoggle button').forEach(b => {
     renderTable();
   });
 });
+$('#savPath').onclick = () => {
+  $('#inpSav').value = ($('#savPath').textContent || '').replace(/^✎ /, '');
+  $('#inpExe').value = '';
+  $('#pathMask').classList.add('show');
+};
+$('#pathX').onclick = $('#pathCancel').onclick = () => $('#pathMask').classList.remove('show');
+$('#pathMask').onclick = e => { if(e.target.id === 'pathMask') $('#pathMask').classList.remove('show'); };
+
+async function pickFromNative(which, target){
+  const api = window.pywebview && window.pywebview.api;
+  if(!api || !api[which]){ toast('浏览器模式下没有文件选择框，请直接粘贴路径'); return; }
+  const p = await api[which]();
+  if(p) $(target).value = p;
+}
+$('#btnPickSav').onclick = () => pickFromNative('pick_save', '#inpSav');
+$('#btnPickExe').onclick = () => pickFromNative('pick_exe', '#inpExe');
+
+$('#pathAuto').onclick = async () => {
+  try{ await api('/api/set-sav', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({sav:'', exe:''})}); }
+  catch(e){ toast(e.message, true); return; }
+  $('#pathMask').classList.remove('show');
+  toast('已恢复自动探测'); await loadState();
+};
+
+$('#pathOk').onclick = async () => {
+  const sav = $('#inpSav').value.trim();
+  const exe = $('#inpExe').value.trim();
+  if(!sav){ toast('请先填存档路径', true); return; }
+  try{ await api('/api/set-sav', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({sav, exe: exe || null})}); }
+  catch(e){ toast(e.message, true); return; }
+  $('#pathMask').classList.remove('show');
+  toast('已切换存档'); await loadState();
+};
+
 on('#btnOpenFolder', 'click', async () => {
   try { const r = await api('/api/open-folder', {method:'POST'}); toast('已在资源管理器打开'); }
   catch(e){ toast(e.message, true); }

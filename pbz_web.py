@@ -36,8 +36,83 @@ _CACHE = {}
 
 
 # ---------------------------------------------------------------- data
+SAV_CFG = os.path.join(T.APP_DIR, "sav_path.txt")
+EXE_CFG = os.path.join(T.APP_DIR, "exe_path.txt")
+
+
+def _read_cfg(p):
+    try:
+        v = open(p, encoding="utf-8").read().strip()
+        return v or None
+    except OSError:
+        return None
+
+
+def _write_cfg(p, v):
+    try:
+        if v:
+            open(p, "w", encoding="utf-8").write(v + "\n")
+        elif os.path.exists(p):
+            os.remove(p)
+    except OSError:
+        pass
+
+
+def sav_source():
+    return "manual" if _read_cfg(SAV_CFG) else "auto"
+
+
 def sav_path():
+    manual = _read_cfg(SAV_CFG)
+    if manual and os.path.exists(manual):
+        return manual
     return T.find_sav()
+
+
+_ORIG_FIND_SAV = T.find_sav
+_ORIG_FIND_EXE = T.find_exe
+
+
+def apply_paths(sav=None, exe=None):
+    """切换存档/主程序路径并落盘；传空串表示清空（恢复自动探测）"""
+    if exe is not None:
+        if exe == "":
+            T.find_exe = _ORIG_FIND_EXE
+            _write_cfg(EXE_CFG, None)
+        else:
+            if not os.path.isfile(exe):
+                return False, f"主程序不存在：{exe}"
+            T.find_exe = lambda: exe
+            _write_cfg(EXE_CFG, exe)
+
+    if sav is None or sav == "":
+        if sav == "":
+            T.find_sav = _ORIG_FIND_SAV
+            _write_cfg(SAV_CFG, None)
+            _CACHE.clear()
+            load(force=True)
+        return True, None
+
+    if not os.path.isfile(sav):
+        return False, f"文件不存在：{sav}"
+    if not sav.lower().endswith(".sav"):
+        return False, "这看起来不是 PBZSaveGame.sav"
+
+    T.find_sav = lambda: sav
+    _write_cfg(SAV_CFG, sav)
+    _CACHE.clear()
+    try:
+        sf = load(force=True)
+        if not sf.slots:
+            raise RuntimeError("文件能打开但没有槽位")
+    except Exception as e:
+        _write_cfg(SAV_CFG, None)
+        T.find_sav = _ORIG_FIND_SAV
+        _CACHE.clear()
+        try: load(force=True)
+        except Exception: pass
+        return False, f"打不开这个存档：{e}"
+    return True, None
 
 
 # ---------------------------------------------------------------- 名字
@@ -434,7 +509,7 @@ class Handler(BaseHTTPRequestHandler):
                 active = adv.json.get("LastContinueSlot") if adv else None
                 p = sf.path
                 return self._send(200, {
-                    "sav": p, "size": len(sf.buf), "slotCount": len(sf.slots),
+                    "sav": p, "savSource": sav_source(), "size": len(sf.buf), "slotCount": len(sf.slots),
                     "gameRunning": game_running(),
                     "active": active,
                     "slots": [slot_brief(s, active) for s in playable(sf)],
@@ -485,6 +560,11 @@ class Handler(BaseHTTPRequestHandler):
             with LOCK:
                 if u.path == "/api/open-folder":
                     return self._open_folder()
+                if u.path == "/api/set-sav":
+                    ok, err = apply_paths(req.get("sav"), req.get("exe"))
+                    if not ok:
+                        return self._send(400, {"error": err})
+                    return self._send(200, {"ok": True, "sav": sav_path()})
                 if u.path == "/api/preview":
                     # 关键：预览必须改在“一次性副本”上，绝不能碰缓存里的对象，
                     # 否则预览就把内存改掉了，紧接着的写入会误判为“数值没变”。
@@ -531,6 +611,9 @@ def main():
     ap.add_argument("--sav", default=None)
     ap.add_argument("--oodle", default=None)
     args = ap.parse_args()
+    ce = _read_cfg(EXE_CFG)
+    if ce and os.path.isfile(ce):
+        T.find_exe = lambda: ce
     if args.sav:
         T.find_sav = lambda: args.sav
     try:
