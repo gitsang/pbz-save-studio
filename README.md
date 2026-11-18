@@ -3,6 +3,8 @@
 > v1.2.0 · Windows 桌面小工具，用来查看和修改《影之刃零》(Phantom Blade Zero) 的本地存档：
 > Boss 战报（挑战/击杀/身陨/最佳用时）、难度、物品数量，改完自动备份。
 
+![Boss 战报 · 卡片视图](screenshots/boss-cards.png)
+
 ## 特性
 
 - **原生桌面窗口**（WebView2），无控制台、不打开浏览器，自带应用图标
