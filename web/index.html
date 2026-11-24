@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>影之刃零 · 存档工坊</title>
+<title>Phantom Blade Zero · Save Studio</title>
 <style>
   :root{
     --paper:#f6f3ec; --card:#fffdf9; --line:#e3dccf; --line-2:#efe9dd;
@@ -101,7 +101,7 @@
   .vtoggle button.on{background:#f6f1e6;color:var(--ink);font-weight:600}
   .vtoggle button:hover{color:var(--ink)}
 
-  /* ---------- boss 卡片 ---------- */
+  /* ---------- boss cards ---------- */
   .bcard-grid{
     display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));
     gap:12px;padding:16px 20px 22px
@@ -312,50 +312,54 @@
   <header>
     <div class="brand">
       <div class="seal">刃</div>
-      <h1>存档工坊</h1>
-      <span class="zh">影之刃零</span>
+      <h1 data-i18n="app.title">Save Studio</h1>
+      <span class="zh" data-i18n="app.game">Phantom Blade Zero</span>
       <span class="ver">v1.2.0</span>
     </div>
-    <span class="tag" id="tagGame">检测中…</span>
-    <button class="path" id="savPath" title="点击手动指定存档位置">—</button>
-    <button class="btn" id="btnOpenFolder" title="在资源管理器里定位当前存档">打开存档目录</button>
-    <button class="btn" id="btnRefresh">刷新</button>
+    <span class="tag" id="tagGame" data-i18n="app.detecting">Detecting…</span>
+    <button class="path" id="savPath" data-i18n-title="app.savPathTip">—</button>
+    <button class="btn" id="btnOpenFolder" data-i18n="app.openFolder" data-i18n-title="app.openFolderTip">Open save folder</button>
+    <button class="btn" id="btnRefresh" data-i18n="app.refresh">Refresh</button>
+    <select class="btn" id="selLang" title="Language" style="padding:5px 6px">
+      <option value="en">English</option>
+      <option value="zh">中文</option>
+    </select>
   </header>
 
   <div class="wrap">
     <aside>
       <div class="side-block">
-        <div class="aside-h"><span>存档备份</span><span id="backupCount"></span></div>
-        <select id="selBackup" title="每次写入前自动生成 .bak-时间戳"></select>
-        <button class="btn" id="btnRestore">还原到此备份</button>
+        <div class="aside-h"><span data-i18n="side.backup">Save backups</span><span id="backupCount"></span></div>
+        <select id="selBackup" data-i18n-title="side.backupSelTip"></select>
+        <button class="btn" id="btnRestore" data-i18n="side.restore">Restore this backup</button>
       </div>
 
       <div class="side-block grow">
-        <div class="aside-h"><span>存档槽位</span><span id="slotCount"></span></div>
+        <div class="aside-h"><span data-i18n="side.slots">Save slots</span><span id="slotCount"></span></div>
         <div id="slotList"></div>
       </div>
     </aside>
 
     <main>
       <div class="tabs">
-        <button class="tab on" data-tab="boss">Boss 战报<span class="cnt-badge" id="bossCount"></span></button>
-        <button class="tab" data-tab="items">物品<span class="cnt-badge" id="itemCount"></span></button>
-        <button class="tab" data-tab="global">生涯战报<span class="cnt-badge" id="globalCount"></span></button>
+        <button class="tab on" data-tab="boss"><span data-i18n="tab.boss">Boss records</span><span class="cnt-badge" id="bossCount"></span></button>
+        <button class="tab" data-tab="items"><span data-i18n="tab.items">Items</span><span class="cnt-badge" id="itemCount"></span></button>
+        <button class="tab" data-tab="global"><span data-i18n="tab.global">Career records</span><span class="cnt-badge" id="globalCount"></span></button>
         <span class="hint" id="curHint"></span>
-        <div class="vtoggle" id="vtoggle" title="切换表格 / 卡片视图">
-          <button data-view="table">表格</button>
-          <button data-view="card">卡片</button>
+        <div class="vtoggle" id="vtoggle" data-i18n-title="view.toggleTip">
+          <button data-view="table" data-i18n="view.table">Table</button>
+          <button data-view="card" data-i18n="view.card">Cards</button>
         </div>
       </div>
 
       <section class="panel on" id="panelBoss">
-        <div class="panel-body" id="tableWrap"><div class="empty">左侧选择一个槽位</div></div>
+        <div class="panel-body" id="tableWrap"><div class="empty" data-i18n="empty.pickSlot">Select a slot on the left</div></div>
       </section>
 
       <section class="panel" id="panelItems">
         <div class="panel-head">
-          <input type="text" id="inpItemSearch" placeholder="筛选 ID 或类别" style="height:28px;width:190px">
-          <label class="chk"><input type="checkbox" id="chkItemNonZero"> 只看有数量的</label>
+          <input type="text" id="inpItemSearch" data-i18n-placeholder="items.filterPlaceholder" placeholder="Filter by ID or category" style="height:28px;width:190px">
+          <label class="chk"><input type="checkbox" id="chkItemNonZero"> <span data-i18n="items.onlyNonZero">Only items with a count</span></label>
           <span class="hint" id="itemHint" style="margin-left:auto"></span>
         </div>
         <div class="panel-body" id="itemWrap"><div class="empty">—</div></div>
@@ -363,18 +367,18 @@
 
       <section class="panel" id="panelGlobal">
         <div class="panel-head">
-          <span class="hint" style="margin:0">跨档、跨周目累计的账本（Advanced），回档不会回退；改 Boss 战报时会自动同步</span>
+          <span class="hint" style="margin:0" data-i18n="global.hint">A cross-slot, cross-cycle ledger (Advanced) that does not roll back when you restore a save; it stays in sync when you edit boss records</span>
         </div>
         <div class="panel-body" id="globalWrap"><div class="empty">—</div></div>
       </section>
 
       <div class="footbar">
-        <span class="cnt">待提交：<b id="dirtyCount">0</b> 处修改</span>
+        <span class="cnt"><span data-i18n="foot.pending">Pending:</span> <b id="dirtyCount">0</b> <span data-i18n="foot.changes">changes</span></span>
         <span class="note" id="footNote"></span>
         <span style="flex:1"></span>
-        <button class="btn" id="btnDiscard">丢弃修改</button>
-        <button class="btn" id="btnPreview2">预览</button>
-        <button class="btn primary wide" id="btnWrite">写入存档</button>
+        <button class="btn" id="btnDiscard" data-i18n="foot.discard">Discard</button>
+        <button class="btn" id="btnPreview2" data-i18n="foot.preview">Preview</button>
+        <button class="btn primary wide" id="btnWrite" data-i18n="foot.write">Write to save</button>
       </div>
     </main>
   </div>
@@ -382,38 +386,38 @@
 
 <div class="mask" id="mask">
   <div class="dlg">
-    <div class="dlg-h"><h3 id="dlgTitle">变更预览</h3><button class="close" id="dlgX">×</button></div>
+    <div class="dlg-h"><h3 id="dlgTitle" data-i18n="dlg.previewTitle">Change preview</h3><button class="close" id="dlgX">×</button></div>
     <div class="dlg-b" id="dlgBody"></div>
     <div class="dlg-f">
-      <button class="btn" id="dlgCancel">取消</button>
-      <button class="btn primary" id="dlgOk">确认写入</button>
+      <button class="btn" id="dlgCancel" data-i18n="dlg.cancel">Cancel</button>
+      <button class="btn primary" id="dlgOk" data-i18n="dlg.confirmWrite">Confirm write</button>
     </div>
   </div>
 </div>
 
 <div class="mask" id="pathMask">
   <div class="dlg" style="width:min(660px,92vw)">
-    <div class="dlg-h"><h3>存档位置</h3><button class="close" id="pathX">×</button></div>
+    <div class="dlg-h"><h3 data-i18n="path.title">Save location</h3><button class="close" id="pathX">×</button></div>
     <div class="dlg-b" style="font-family:inherit;white-space:normal;font-size:12.5px;line-height:1.9">
-      <label style="font-size:11px;color:var(--muted);letter-spacing:.08em">存档文件 PBZSaveGame.sav</label>
+      <label style="font-size:11px;color:var(--muted);letter-spacing:.08em" data-i18n="path.savLabel">Save file PBZSaveGame.sav</label>
       <div style="display:flex;gap:8px;margin:4px 0 12px">
-        <input id="inpSav" style="flex:1;min-width:0" placeholder="留空 = 自动探测（Steam 库）">
-        <button class="btn" id="btnPickSav">浏览…</button>
+        <input id="inpSav" style="flex:1;min-width:0" data-i18n-placeholder="path.savPlaceholder" placeholder="Empty = auto-detect (Steam libraries)">
+        <button class="btn" id="btnPickSav" data-i18n="path.browse">Browse…</button>
       </div>
-      <label style="font-size:11px;color:var(--muted);letter-spacing:.08em">游戏主程序 PBZ.exe（可选）</label>
+      <label style="font-size:11px;color:var(--muted);letter-spacing:.08em" data-i18n="path.exeLabel">Game executable PBZ.exe (optional)</label>
       <div style="display:flex;gap:8px;margin:4px 0 12px">
-        <input id="inpExe" style="flex:1;min-width:0" placeholder="换渠道（WeGame 等）时用来重新推导密钥">
-        <button class="btn" id="btnPickExe">浏览…</button>
+        <input id="inpExe" style="flex:1;min-width:0" data-i18n-placeholder="path.exePlaceholder" placeholder="Used to re-derive the key on other storefronts (WeGame etc.)">
+        <button class="btn" id="btnPickExe" data-i18n="path.browse">Browse…</button>
       </div>
-      <p style="margin:0;font-size:11.5px;color:var(--muted);line-height:1.75">
-        换渠道时建议两个都填：存档在 WeGame 的 userdata 里，主程序在 WeGame 安装目录。<br>
-        只填存档也能试，但密钥要从别处推导，可能打不开。
+      <p style="margin:0;font-size:11.5px;color:var(--muted);line-height:1.75" data-i18n="path.help">
+        On a different storefront, fill in both: the save lives in WeGame's userdata, the executable in the WeGame install directory.
+        Filling in only the save may still work, but the key has to be derived elsewhere and the save may not open.
       </p>
     </div>
     <div class="dlg-f">
-      <button class="btn" id="pathAuto">恢复自动探测</button>
-      <button class="btn" id="pathCancel">取消</button>
-      <button class="btn primary" id="pathOk">应用</button>
+      <button class="btn" id="pathAuto" data-i18n="path.auto">Restore auto-detect</button>
+      <button class="btn" id="pathCancel" data-i18n="dlg.cancel">Cancel</button>
+      <button class="btn primary" id="pathOk" data-i18n="path.apply">Apply</button>
     </div>
   </div>
 </div>
@@ -428,6 +432,231 @@ window.addEventListener('error', e => {
 window.addEventListener('unhandledrejection', e => {
   try{ fetch('/api/debug?m=' + encodeURIComponent('JSREJ ' + (e.reason && (e.reason.stack||e.reason.message) || e.reason))); }catch(_){}
 });
+/* ---------- i18n ---------- */
+const STRINGS = {
+  en: {
+    "app.title": "Save Studio",
+    "app.game": "Phantom Blade Zero",
+    "app.detecting": "Detecting…",
+    "app.savPathTip": "Click to set the save location manually",
+    "app.openFolder": "Open save folder",
+    "app.openFolderTip": "Reveal the current save in Explorer",
+    "app.refresh": "Refresh",
+    "side.backup": "Save backups",
+    "side.backupSelTip": "A .bak-<timestamp> backup is created before every write",
+    "side.restore": "Restore this backup",
+    "side.slots": "Save slots",
+    "tab.boss": "Boss records",
+    "tab.items": "Items",
+    "tab.global": "Career records",
+    "view.toggleTip": "Switch table / card view",
+    "view.table": "Table",
+    "view.card": "Cards",
+    "empty.pickSlot": "Select a slot on the left",
+    "items.filterPlaceholder": "Filter by ID or category",
+    "items.onlyNonZero": "Only items with a count",
+    "global.hint": "A cross-slot, cross-cycle ledger (Advanced) that does not roll back when you restore a save; it stays in sync when you edit boss records",
+    "foot.pending": "Pending:",
+    "foot.changes": "changes",
+    "foot.discard": "Discard",
+    "foot.preview": "Preview",
+    "foot.write": "Write to save",
+    "dlg.previewTitle": "Change preview",
+    "dlg.cancel": "Cancel",
+    "dlg.confirmWrite": "Confirm write",
+    "path.title": "Save location",
+    "path.savLabel": "Save file PBZSaveGame.sav",
+    "path.savPlaceholder": "Empty = auto-detect (Steam libraries)",
+    "path.browse": "Browse…",
+    "path.exeLabel": "Game executable PBZ.exe (optional)",
+    "path.exePlaceholder": "Used to re-derive the key on other storefronts (WeGame etc.)",
+    "path.help": "On a different storefront, fill in both: the save lives in WeGame's userdata, the executable in the WeGame install directory. Filling in only the save may still work, but the key has to be derived elsewhere and the save may not open.",
+    "path.auto": "Restore auto-detect",
+    "path.apply": "Apply",
+
+    "api.parseError": "Failed to parse the response",
+    "state.gameRunning": "Game is running · writing disabled",
+    "state.gameStopped": "Game is not running · writing allowed",
+    "state.slots": "{n} slots",
+    "state.backups": "{n} backups",
+    "state.noBackups": "No backups",
+    "slot.meta": "Cycle {cycle} · {playtime} · {deaths} deaths · {days} days left",
+    "hint.slot": "{diff} · cycle {cycle} · deaths {deaths} · {days} days left",
+
+    "col.boss": "Boss",
+    "col.diff": "Difficulty",
+    "col.attempts": "Attempts",
+    "col.kills": "Kills",
+    "col.deaths": "Deaths",
+    "col.time": "Best time",
+    "col.cycle": "Cycle",
+    "col.item": "Item",
+    "col.amount": "Amount",
+    "col.max": "Max",
+    "col.first": "First obtained",
+
+    "tip.deathsInconsistent": "Kills exceed attempts — inconsistent data, consider fixing it",
+    "tip.deathsInconsistentShort": "Kills exceed attempts — inconsistent data",
+    "tip.cnUnverified": "Chinese name unverified; you can fix it in boss_names.json",
+    "tip.cnInferred": "Chinese name unverified (inferred from the resource name's pinyin); you can fix it in boss_names.json",
+    "tip.moveDifficulty": "Move this record to another difficulty",
+
+    "empty.noBossRecords": "This slot has no boss records",
+    "empty.noCareer": "No career records yet",
+    "empty.noItems": "This slot has no item data",
+    "empty.noMatch": "No matching items",
+    "items.summary": "{total} items, showing {shown}",
+
+    "diff.0": "Handicapped",
+    "diff.1": "Easy",
+    "diff.2": "Normal",
+    "diff.3": "Hard",
+    "diff.4": "Nightmare",
+
+    "msg.noChanges": "Nothing changed yet",
+    "dlg.previewCount": "Change preview · {n} changes",
+    "dlg.previewNone": "No actual changes (the target slot has none of those records)",
+    "msg.writing": "Writing…",
+    "log.wrote": "✔ wrote {n} changes",
+    "log.backup": "  backup: {f}",
+    "msg.wroteCount": "Wrote {n} changes",
+    "msg.nothingToWrite": "Nothing to write (values already match the save)",
+    "log.nothingWritten": "(no actual change, nothing written to disk)",
+    "confirm.restore": "Overwrite the current save with this backup?\n{f}\n\nThe current file will be backed up first.",
+    "log.restored": "✔ restored: {f}",
+    "msg.restored": "Restored",
+    "msg.noFilePicker": "No file picker in browser mode — paste the path instead",
+    "msg.autoRestored": "Auto-detect restored",
+    "msg.needSavPath": "Please provide the save path first",
+    "msg.savSwitched": "Save switched",
+    "msg.folderOpened": "Opened in Explorer",
+    "msg.refreshed": "Refreshed",
+    "msg.discarded": "Uncommitted changes discarded",
+  },
+  zh: {
+    "app.title": "存档工坊",
+    "app.game": "影之刃零",
+    "app.detecting": "检测中…",
+    "app.savPathTip": "点击手动指定存档位置",
+    "app.openFolder": "打开存档目录",
+    "app.openFolderTip": "在资源管理器里定位当前存档",
+    "app.refresh": "刷新",
+    "side.backup": "存档备份",
+    "side.backupSelTip": "每次写入前自动生成 .bak-时间戳",
+    "side.restore": "还原到此备份",
+    "side.slots": "存档槽位",
+    "tab.boss": "Boss 战报",
+    "tab.items": "物品",
+    "tab.global": "生涯战报",
+    "view.toggleTip": "切换表格 / 卡片视图",
+    "view.table": "表格",
+    "view.card": "卡片",
+    "empty.pickSlot": "左侧选择一个槽位",
+    "items.filterPlaceholder": "筛选 ID 或类别",
+    "items.onlyNonZero": "只看有数量的",
+    "global.hint": "跨档、跨周目累计的账本（Advanced），回档不会回退；改 Boss 战报时会自动同步",
+    "foot.pending": "待提交：",
+    "foot.changes": "处修改",
+    "foot.discard": "丢弃修改",
+    "foot.preview": "预览",
+    "foot.write": "写入存档",
+    "dlg.previewTitle": "变更预览",
+    "dlg.cancel": "取消",
+    "dlg.confirmWrite": "确认写入",
+    "path.title": "存档位置",
+    "path.savLabel": "存档文件 PBZSaveGame.sav",
+    "path.savPlaceholder": "留空 = 自动探测（Steam 库）",
+    "path.browse": "浏览…",
+    "path.exeLabel": "游戏主程序 PBZ.exe（可选）",
+    "path.exePlaceholder": "换渠道（WeGame 等）时用来重新推导密钥",
+    "path.help": "换渠道时建议两个都填：存档在 WeGame 的 userdata 里，主程序在 WeGame 安装目录。只填存档也能试，但密钥要从别处推导，可能打不开。",
+    "path.auto": "恢复自动探测",
+    "path.apply": "应用",
+
+    "api.parseError": "响应解析失败",
+    "state.gameRunning": "游戏正在运行 · 禁止写入",
+    "state.gameStopped": "游戏未运行 · 可写入",
+    "state.slots": "{n} 档",
+    "state.backups": "{n} 份",
+    "state.noBackups": "暂无备份",
+    "slot.meta": "周目 {cycle} · {playtime} · 死 {deaths} · 余 {days} 天",
+    "hint.slot": "{diff} · 周目 {cycle} · 死亡 {deaths} · 余 {days} 天",
+
+    "col.boss": "Boss",
+    "col.diff": "难度",
+    "col.attempts": "挑战",
+    "col.kills": "击杀",
+    "col.deaths": "身陨",
+    "col.time": "最佳用时",
+    "col.cycle": "周目",
+    "col.item": "物品",
+    "col.amount": "数量",
+    "col.max": "上限",
+    "col.first": "首次获得",
+
+    "tip.deathsInconsistent": "击杀数大于挑战数，数据不一致，建议改回",
+    "tip.deathsInconsistentShort": "击杀数大于挑战数，数据不一致",
+    "tip.cnUnverified": "中文名未核实，可在 boss_names.json 里修正",
+    "tip.cnInferred": "中文名未核实（按资源名拼音推断），可在 boss_names.json 里修正",
+    "tip.moveDifficulty": "把这条战绩挪到其它难度下",
+
+    "empty.noBossRecords": "这个槽位里没有 Boss 记录",
+    "empty.noCareer": "暂无生涯战报",
+    "empty.noItems": "这个槽位没有物品数据",
+    "empty.noMatch": "没有匹配的物品",
+    "items.summary": "共 {total} 项，显示 {shown}",
+
+    "diff.0": "残疾",
+    "diff.1": "入阵者",
+    "diff.2": "破局者",
+    "diff.3": "逆天者",
+    "diff.4": "六十六天",
+
+    "msg.noChanges": "还没有任何改动",
+    "dlg.previewCount": "变更预览 · {n} 处",
+    "dlg.previewNone": "没有实际变化（目标槽位里没有这些记录）",
+    "msg.writing": "写入中…",
+    "log.wrote": "✔ 已写入 {n} 处改动",
+    "log.backup": "  备份：{f}",
+    "msg.wroteCount": "已写入 {n} 处改动",
+    "msg.nothingToWrite": "没有可写入的改动（数值和存档一致）",
+    "log.nothingWritten": "（没有实际改动，未写盘）",
+    "confirm.restore": "用备份覆盖当前存档？\n{f}\n\n当前文件也会先备份一份。",
+    "log.restored": "✔ 已还原：{f}",
+    "msg.restored": "已还原",
+    "msg.noFilePicker": "浏览器模式下没有文件选择框，请直接粘贴路径",
+    "msg.autoRestored": "已恢复自动探测",
+    "msg.needSavPath": "请先填存档路径",
+    "msg.savSwitched": "已切换存档",
+    "msg.folderOpened": "已在资源管理器打开",
+    "msg.refreshed": "已刷新",
+    "msg.discarded": "已丢弃未提交修改",
+  },
+};
+
+let LANG = (localStorage.getItem('pbz.lang') === 'zh') ? 'zh' : 'en';
+const t = (key, params) => {
+  let s = (STRINGS[LANG] && STRINGS[LANG][key]) || STRINGS.en[key] || key;
+  if (params) for (const k in params) s = s.split('{' + k + '}').join(String(params[k]));
+  return s;
+};
+const setLang = lang => {
+  LANG = (lang === 'zh') ? 'zh' : 'en';
+  localStorage.setItem('pbz.lang', LANG);
+  document.documentElement.lang = LANG;
+  applyI18n();
+  if (state.slots.length) { renderSlots(); renderTable(); renderGlobal(); renderItems(); }
+  const sl = state.slots.find(x => x.name === state.cur);
+  if (sl) $('#curHint').textContent = t('hint.slot', { diff: sl.diffName, cycle: sl.cycle, deaths: sl.deaths, days: sl.days });
+};
+const applyI18n = () => {
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+  document.title = t('app.title') + ' · ' + t('app.game');
+  const langSel = $('#selLang'); if (langSel) langSel.value = LANG;
+};
+
 const DIFF_PILL = d => `pill d${d}`;
 const _qv = new URLSearchParams(location.search).get('view');
 const state = { slots:[], cur:null, rows:[], items:[], global:[], pending:new Map(), itemPending:new Map(), moves:new Map(), sort:{key:null,dir:1}, view:(_qv || localStorage.getItem('pbz.view') || 'table'), lastPreview:null };
@@ -453,34 +682,39 @@ function log(line, cls){
 }
 async function api(path, opt){
   const r = await fetch(path, opt);
-  const j = await r.json().catch(()=>({error:'响应解析失败'}));
+  const j = await r.json().catch(()=>({error: t('api.parseError')}));
   if(!r.ok || j.error) throw new Error(j.error||('HTTP '+r.status));
   return j;
 }
 
 /* ---------- load ---------- */
+function renderSlots(){
+  const list = $('#slotList'); if(!list) return;
+  list.innerHTML = '';
+  state.slots.forEach(sl=>{
+    const d = document.createElement('div');
+    d.className = 'slot' + (state.cur===sl.name ? ' on' : '');
+    d.innerHTML = `
+      <div class="slot-n">${sl.active?'<span class="dot"></span>':''}${sl.name}</div>
+      <div class="slot-d">${sl.diff}·${sl.diffName.split('(')[0]}</div>
+      <div class="slot-m">${t('slot.meta', {cycle: sl.cycle, playtime: sl.playtime, deaths: sl.deaths, days: sl.days})}</div>`;
+    d.onclick = ()=>selectSlot(sl.name);
+    list.appendChild(d);
+  });
+}
+
 async function loadState(){
   const s = await api('/api/state');
   state.slots = s.slots;
   $('#savPath').textContent = (s.savSource === 'manual' ? '✎ ' : '') + s.sav;
   $('#savPath').classList.toggle('manual', s.savSource === 'manual');
   $('#savPath').title = s.sav;
-  $('#slotCount').textContent = s.slots.length + ' 档';
+  $('#slotCount').textContent = t('state.slots', {n: s.slots.length});
   const g = $('#tagGame');
-  g.textContent = s.gameRunning ? '游戏正在运行 · 禁止写入' : '游戏未运行 · 可写入';
+  g.textContent = s.gameRunning ? t('state.gameRunning') : t('state.gameStopped');
   g.className = 'tag ' + (s.gameRunning ? 'warn' : 'ok');
 
-  const list=$('#slotList'); list.innerHTML='';
-  s.slots.forEach(sl=>{
-    const d=document.createElement('div');
-    d.className='slot'+(state.cur===sl.name?' on':'');
-    d.innerHTML = `
-      <div class="slot-n">${sl.active?'<span class="dot"></span>':''}${sl.name}</div>
-      <div class="slot-d">${sl.diff}·${sl.diffName.split('(')[0]}</div>
-      <div class="slot-m">周目${sl.cycle} · ${sl.playtime} · 死${sl.deaths} · 余${sl.days}天</div>`;
-    d.onclick = ()=>selectSlot(sl.name);
-    list.appendChild(d);
-  });
+  renderSlots();
 
   const bs=$('#selBackup'); bs.innerHTML='';
   (s.backups||[]).forEach(b=>{
@@ -489,9 +723,9 @@ async function loadState(){
     o.textContent = `${b.time}  ·  ${mb.toFixed(2)} MB`;
     bs.appendChild(o);
   });
-  const bc=$('#backupCount'); if(bc) bc.textContent = (s.backups||[]).length ? (s.backups.length + ' 份') : '';
+  const bc=$('#backupCount'); if(bc) bc.textContent = (s.backups||[]).length ? t('state.backups', {n: s.backups.length}) : '';
   if(!(s.backups||[]).length){
-    const o=document.createElement('option'); o.value=''; o.textContent='暂无备份'; bs.appendChild(o);
+    const o=document.createElement('option'); o.value=''; o.textContent=t('state.noBackups'); bs.appendChild(o);
     $('#btnRestore').disabled=true;
   } else $('#btnRestore').disabled=false;
 
@@ -518,7 +752,7 @@ async function selectSlot(name, silent){
   renderGlobal();
   const gc=$('#globalCount'); if(gc) gc.textContent = state.global.length;
   const sl = state.slots.find(x=>x.name===name);
-  $('#curHint').textContent = sl ? `${sl.diffName} · 周目 ${sl.cycle} · 死亡 ${sl.deaths} · 余 ${sl.days} 天` : '';
+  $('#curHint').textContent = sl ? t('hint.slot', {diff: sl.diffName, cycle: sl.cycle, deaths: sl.deaths, days: sl.days}) : '';
 }
 
 /* ---------- render ---------- */
@@ -572,7 +806,7 @@ function th(key, label, align, tip){
 
 function renderTable(){
   const wrap=$('#tableWrap');
-  if(!state.rows.length){ wrap.innerHTML='<div class="empty">这个槽位里没有 Boss 记录</div>'; return; }
+  if(!state.rows.length){ wrap.innerHTML='<div class="empty">'+t('empty.noBossRecords')+'</div>'; return; }
   document.querySelectorAll('#vtoggle button').forEach(b =>
     b.classList.toggle('on', b.dataset.view === state.view));
 
@@ -584,11 +818,11 @@ function renderTable(){
 
   let html = `<table><thead><tr>
       ${th('boss','Boss')}
-      ${th('diff','难度')}
-      ${th('attempts','挑战',1)}
-      ${th('kills','击杀',1)}
-      ${th('deaths','身陨',1)}
-      ${th('time','最佳用时',1)}
+      ${th('diff',t('col.diff'))}
+      ${th('attempts',t('col.attempts'),1)}
+      ${th('kills',t('col.kills'),1)}
+      ${th('deaths',t('col.deaths'),1)}
+      ${th('time',t('col.time'),1)}
     </tr></thead><tbody>`;
   sortedRows().forEach(r=>{
     const v=eff(r), raw=(v.attempts||0)-(v.kills||0), deaths=Math.max(raw,0);
@@ -599,7 +833,7 @@ function renderTable(){
       <td align="right"><input class="cell-in" data-f="attempts" value="${v.attempts}"></td>
       <td align="right"><input class="cell-in" data-f="kills" value="${v.kills}"></td>
       <td align="right">${raw<0
-        ? `<span class="deaths bad" title="击杀数大于挑战数，数据不一致，建议改回">${raw}</span>`
+        ? `<span class="deaths bad" title="${t('tip.deathsInconsistent')}">${raw}</span>`
         : `<span class="deaths ${deaths===0?'zero':(deaths>=3?'hot':'')}">${deaths}</span>`}</td>
       <td align="right"><input class="cell-in time" data-f="bestMs" value="${fmtMs(v.bestMs)}"></td>
     </tr>`;
@@ -613,21 +847,21 @@ function renderTable(){
 
 function renderGlobal(){
   const wrap = $('#globalWrap');
-  if(!state.global.length){ wrap.innerHTML = '<div class="empty">暂无生涯战报</div>'; return; }
+  if(!state.global.length){ wrap.innerHTML = '<div class="empty">'+t('empty.noCareer')+'</div>'; return; }
   let html = `<table><thead><tr>
-      <th>Boss</th>
-      <th style="width:13%">难度</th>
-      <th style="text-align:right;width:10%">周目</th>
-      <th style="text-align:right;width:10%">挑战</th>
-      <th style="text-align:right;width:10%">击杀</th>
-      <th style="text-align:right;width:10%">身陨</th>
-      <th style="text-align:right;width:15%">最佳用时</th>
+      <th>${t('col.boss')}</th>
+      <th style="width:13%">${t('col.diff')}</th>
+      <th style="text-align:right;width:10%">${t('col.cycle')}</th>
+      <th style="text-align:right;width:10%">${t('col.attempts')}</th>
+      <th style="text-align:right;width:10%">${t('col.kills')}</th>
+      <th style="text-align:right;width:10%">${t('col.deaths')}</th>
+      <th style="text-align:right;width:15%">${t('col.time')}</th>
     </tr></thead><tbody>`;
   state.global.forEach(r=>{
     const dd = Math.max(r.attempts - r.kills, 0);
     html += `<tr>
       ${bossCell(r)}
-      <td><span class="${DIFF_PILL(r.diff)}">${r.diff} · ${String(DIFF_LABEL(r.diff)).split('(')[0]}</span></td>
+      <td><span class="${DIFF_PILL(r.diff)}">${r.diff} · ${DIFF_LABEL(r.diff)}</span></td>
       <td align="right" class="num">${r.cycle ?? 0}</td>
       <td align="right" class="num">${r.attempts}</td>
       <td align="right" class="num">${r.kills}</td>
@@ -640,7 +874,7 @@ function renderGlobal(){
 
 function renderItems(){
   const wrap=$('#itemWrap');
-  if(!state.items.length){ wrap.innerHTML='<div class="empty">这个槽位没有物品数据</div>'; $('#itemHint').textContent=''; return; }
+  if(!state.items.length){ wrap.innerHTML='<div class="empty">'+t('empty.noItems')+'</div>'; $('#itemHint').textContent=''; return; }
   const q=($('#inpItemSearch').value||'').trim().toLowerCase();
   const nz=$('#chkItemNonZero').checked;
   const list=state.items.filter(it=>{
@@ -648,13 +882,13 @@ function renderItems(){
     if(!q) return true;
     return it.id.toLowerCase().includes(q) || (it.hint||'').toLowerCase().includes(q);
   });
-  if(!list.length){ wrap.innerHTML='<div class="empty">没有匹配的物品</div>'; }
+  if(!list.length){ wrap.innerHTML='<div class="empty">'+t('empty.noMatch')+'</div>'; }
   else {
     let html=`<table><thead><tr>
-        <th style="width:44%">物品</th>
-        <th style="text-align:right">数量</th>
-        <th style="text-align:right">上限</th>
-        <th style="text-align:right">首次获得</th>
+        <th style="width:44%">${t('col.item')}</th>
+        <th style="text-align:right">${t('col.amount')}</th>
+        <th style="text-align:right">${t('col.max')}</th>
+        <th style="text-align:right">${t('col.first')}</th>
       </tr></thead><tbody>`;
     list.forEach(it=>{
       const cur = state.itemPending.has(it.id) ? state.itemPending.get(it.id) : it.amount;
@@ -669,7 +903,7 @@ function renderItems(){
     });
     wrap.innerHTML=html+'</tbody></table>';
   }
-  $('#itemHint').textContent = `共 ${state.items.length} 项，显示 ${list.length}`;
+  $('#itemHint').textContent = t('items.summary', {total: state.items.length, shown: list.length});
   wrap.querySelectorAll('tbody tr').forEach(tr=>{
     const id = tr.dataset.item;
     const base = state.items.find(x=>x.id===id);
@@ -690,32 +924,32 @@ function renderItems(){
 function cardHtml(r){
   const v = eff(r), raw = (v.attempts||0)-(v.kills||0), deaths = Math.max(raw,0);
   const dirty = state.pending.has(pk(r)) || state.moves.has(pk(r));
-  const q = r.verified ? '' : '<span class="q" title="中文名未核实，可在 boss_names.json 里修正">?</span>';
+  const q = r.verified ? '' : `<span class="q" title="${t('tip.cnUnverified')}">?</span>`;
   const dcls = raw < 0 ? 'bad' : (deaths===0 ? 'zero' : (deaths>=3 ? 'hot' : ''));
   const dval = raw < 0 ? raw : deaths;
-  const dtitle = raw < 0 ? ' title="击杀数大于挑战数，数据不一致"' : '';
+  const dtitle = raw < 0 ? ` title="${t('tip.deathsInconsistentShort')}"` : '';
   return `<div class="bcard${dirty?' dirty':''}" data-k="${pk(r)}" title="${r.boss}">
     <div class="bc-h">
       <div class="bc-name">${r.cn}${q}<span class="sub">${r.en || r.boss}</span></div>
       ${diffCell(r, v)}
     </div>
     <div class="bc-stats">
-      <label class="bc-stat"><span class="lb">挑战</span>
+      <label class="bc-stat"><span class="lb">${t('col.attempts')}</span>
         <input class="cell-in" data-f="attempts" value="${v.attempts}"></label>
-      <label class="bc-stat"><span class="lb">击杀</span>
+      <label class="bc-stat"><span class="lb">${t('col.kills')}</span>
         <input class="cell-in" data-f="kills" value="${v.kills}"></label>
-      <div class="bc-stat"><span class="lb">身陨</span>
+      <div class="bc-stat"><span class="lb">${t('col.deaths')}</span>
         <span class="deaths ${dcls}"${dtitle}>${dval}</span></div>
     </div>
     <div class="bc-foot">
-      <span>最佳用时</span>
+      <span>${t('col.time')}</span>
       <input class="cell-in time" data-f="bestMs" value="${fmtMs(v.bestMs)}">
     </div>
   </div>`;
 }
 
 function bossCell(r){
-  const q = r.verified ? '' : '<span class="q" title="中文名未核实（按资源名拼音推断），可在 boss_names.json 里修正">?</span>';
+  const q = r.verified ? '' : `<span class="q" title="${t('tip.cnInferred')}">?</span>`;
   const en = r.en ? `<span class="sub">${r.en}</span>` : `<span class="sub">${r.boss}</span>`;
   return `<td class="boss" title="${r.boss}">${r.cn}${q}${en}</td>`;
 }
@@ -723,7 +957,7 @@ function bossCell(r){
 function diffCell(r, v){
   const dv = state.moves.has(pk(r)) ? state.moves.get(pk(r)) : r.diff;
   const opts = [1,2,3].map(d=>`<option value="${d}"${d===dv?' selected':''}>${d} · ${DIFF_LABEL(d)}</option>`).join('');
-  return `<select class="diff-sel d${dv}" data-f="diff" title="把这条战绩挪到其它难度下">${opts}</select>`;
+  return `<select class="diff-sel d${dv}" data-f="diff" title="${t('tip.moveDifficulty')}">${opts}</select>`;
 }
 
 function bindCells(){
@@ -761,7 +995,7 @@ function bindCells(){
   });
 }
 
-function DIFF_LABEL(d){ return {0:'残疾',1:'入阵者',2:'破局者',3:'逆天者',4:'六十六天'}[d]||d; }
+function DIFF_LABEL(d){ return STRINGS[LANG]['diff.'+d] || STRINGS.en['diff.'+d] || d; }
 
 function updateDirty(){
   const n = state.pending.size + state.moves.size + state.itemPending.size;
@@ -795,38 +1029,38 @@ function anyChange(req){
 /* ---------- actions ---------- */
 async function preview(){
   const req=buildReq();
-  if(!anyChange(req)){ toast('还没有任何改动'); return; }
+  if(!anyChange(req)){ toast(t('msg.noChanges')); return; }
   try{
     const r=await api('/api/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)});
     state.lastPreview=r.changes;
-    $('#dlgTitle').textContent='变更预览 · '+r.changes.length+' 处';
-    $('#dlgBody').textContent = r.changes.length? r.changes.join('\n') : '没有实际变化（目标槽位里没有这些记录）';
+    $('#dlgTitle').textContent=t('dlg.previewCount',{n:r.changes.length});
+    $('#dlgBody').textContent = r.changes.length? r.changes.join('\n') : t('dlg.previewNone');
     $('#dlgOk').disabled = !r.changes.length;
     $('#mask').classList.add('show');
   }catch(e){ toast(e.message,true); }
 }
 async function writeNow(){
   const req=buildReq();
-  if(!anyChange(req)){ toast('还没有任何改动'); return; }
-  const btn=$('#dlgOk'); btn.disabled=true; btn.textContent='写入中…';
+  if(!anyChange(req)){ toast(t('msg.noChanges')); return; }
+  const btn=$('#dlgOk'); btn.disabled=true; btn.textContent=t('msg.writing');
   try{
     const r=await api('/api/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req)});
     $('#mask').classList.remove('show');
-    log(`✔ 已写入 ${r.changes.length} 处改动`, 'ok');
-    if(r.backup){ log('  备份：'+r.backup); toast(`已写入 ${r.applied||0} 处改动`); }
-    else { toast('没有可写入的改动（数值和存档一致）'); log('（没有实际改动，未写盘）'); }
+    log(t('log.wrote',{n:r.changes.length}), 'ok');
+    if(r.backup){ log(t('log.backup',{f:r.backup})); toast(t('msg.wroteCount',{n:r.applied||0})); }
+    else { toast(t('msg.nothingToWrite')); log(t('log.nothingWritten')); }
     state.pending.clear(); state.moves.clear(); state.itemPending.clear();
     updateDirty();
     await loadState();
   }catch(e){ toast(e.message,true); log('✘ '+e.message,'err'); }
-  finally{ btn.disabled=false; btn.textContent='确认写入'; }
+  finally{ btn.disabled=false; btn.textContent=t('dlg.confirmWrite'); }
 }
 async function restore(){
   const f=$('#selBackup').value; if(!f) return;
-  if(!confirm('用备份覆盖当前存档？\n'+f+'\n\n当前文件也会先备份一份。')) return;
+  if(!confirm(t('confirm.restore', {f}))) return;
   try{
     await api('/api/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file:f})});
-    log('✔ 已还原：'+f,'ok'); await loadState(); toast('已还原');
+    log(t('log.restored',{f}),'ok'); await loadState(); toast(t('msg.restored'));
   }catch(e){ toast(e.message,true); }
 }
 
@@ -865,7 +1099,7 @@ $('#pathMask').onclick = e => { if(e.target.id === 'pathMask') $('#pathMask').cl
 
 async function pickFromNative(which, target){
   const api = window.pywebview && window.pywebview.api;
-  if(!api || !api[which]){ toast('浏览器模式下没有文件选择框，请直接粘贴路径'); return; }
+  if(!api || !api[which]){ toast(t('msg.noFilePicker')); return; }
   const p = await api[which]();
   if(p) $(target).value = p;
 }
@@ -877,25 +1111,25 @@ $('#pathAuto').onclick = async () => {
     body: JSON.stringify({sav:'', exe:''})}); }
   catch(e){ toast(e.message, true); return; }
   $('#pathMask').classList.remove('show');
-  toast('已恢复自动探测'); await loadState();
+  toast(t('msg.autoRestored')); await loadState();
 };
 
 $('#pathOk').onclick = async () => {
   const sav = $('#inpSav').value.trim();
   const exe = $('#inpExe').value.trim();
-  if(!sav){ toast('请先填存档路径', true); return; }
+  if(!sav){ toast(t('msg.needSavPath'), true); return; }
   try{ await api('/api/set-sav', {method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({sav, exe: exe || null})}); }
   catch(e){ toast(e.message, true); return; }
   $('#pathMask').classList.remove('show');
-  toast('已切换存档'); await loadState();
+  toast(t('msg.savSwitched')); await loadState();
 };
 
 on('#btnOpenFolder', 'click', async () => {
-  try { const r = await api('/api/open-folder', {method:'POST'}); toast('已在资源管理器打开'); }
+  try { const r = await api('/api/open-folder', {method:'POST'}); toast(t('msg.folderOpened')); }
   catch(e){ toast(e.message, true); }
 });
-on('#btnRefresh', 'click', () => loadState().then(() => toast('已刷新')));
+on('#btnRefresh', 'click', () => loadState().then(() => toast(t('msg.refreshed'))));
 on('#btnPreview2', 'click', preview);
 on('#btnWrite', 'click', preview);
 on('#dlgX', 'click', closeDlg);
@@ -905,9 +1139,11 @@ on('#mask', 'click', e => { if (e.target.id === 'mask') closeDlg(); });
 on('#btnRestore', 'click', restore);
 on('#btnDiscard', 'click', () => {
   state.pending.clear(); state.moves.clear(); state.itemPending.clear();
-  updateDirty(); renderTable(); toast('已丢弃未提交修改');
+  updateDirty(); renderTable(); toast(t('msg.discarded'));
 });
 
+$('#selLang').onchange = e => setLang(e.target.value);
+applyI18n();
 loadState().catch(e=>{ toast(e.message,true); log('✘ '+e.message,'err'); });
 </script>
 </body>

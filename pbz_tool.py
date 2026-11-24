@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-影之刃零 (Phantom Blade Zero) 存档编辑器 —— PBZS v3 容器读写
-支持：查看 / 修改 每档难度、Boss 身陨次数(挑战次数)、击杀用时，以及全局死亡总数。
+Phantom Blade Zero save editor -- read and write the PBZS v3 container.
+Supported: view / edit each slot's difficulty, boss death counts (attempt
+counts), kill times, and the global death total.
 
-用法：
-  python pbz_tool.py info                                  # 查看存档概况 + Boss 战报
-  python pbz_tool.py info --slot ManualSave17              # 只看某一档
-  python pbz_tool.py set-difficulty 3                      # 改难度 (0残疾 1入阵者 2破局者 3逆天者 4六十六天)
-  python pbz_tool.py set-boss GuiChai --diff 3 --deaths 0  # 把某 Boss 在该难度的身陨次数改成 0
-  python pbz_tool.py set-boss GuiChai --diff 3 --time 1:35.200   # 改最佳击杀时间
-  python pbz_tool.py set-boss all --diff 3 --deaths 0      # 批量：该难度下所有 Boss
-  python pbz_tool.py set-total-deaths 0                    # 全局死亡总数(PBZDeathMeta)
-  python pbz_tool.py move-records --from 1 --to 3          # 把某难度的战报改名到另一难度
-  python pbz_tool.py export --out dump/                    # 导出所有槽位 JSON
-  python pbz_tool.py apply --in dump/                      # 回写改过的 JSON
+Usage:
+  python pbz_tool.py info                                  # save overview + boss records
+  python pbz_tool.py info --slot ManualSave17              # just one slot
+  python pbz_tool.py set-difficulty 3                      # change difficulty (0 Handicapped, 1 Easy, 2 Normal, 3 Hard, 4 Nightmare)
+  python pbz_tool.py set-boss GuiChai --diff 3 --deaths 0  # set a boss's death count at that difficulty to 0
+  python pbz_tool.py set-boss GuiChai --diff 3 --time 1:35.200   # change the best kill time
+  python pbz_tool.py set-boss all --diff 3 --deaths 0      # batch: every boss at that difficulty
+  python pbz_tool.py set-total-deaths 0                    # global death total (PBZDeathMeta)
+  python pbz_tool.py move-records --from 1 --to 3          # re-key one difficulty's records onto another
+  python pbz_tool.py export --out dump/                    # export every slot as JSON
+  python pbz_tool.py apply --in dump/                      # write edited JSON back
 
-所有写操作都会：备份原文件 → 校验新文件 → 原子替换。务必先完全退出游戏和 Steam。
+Every write backs up the original, validates the new file, then replaces atomically.
+Always fully quit the game and Steam first.
 """
 import argparse
 import ctypes
@@ -35,7 +37,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def app_dir():
-    """打包成 exe 后，配置/缓存写在 exe 旁边。"""
+    """After packaging as an exe, keep config and caches next to the exe."""
     if getattr(sys, "frozen", False):
         return os.path.dirname(os.path.abspath(sys.executable))
     return HERE
@@ -44,14 +46,13 @@ def app_dir():
 APP_DIR = app_dir()
 KEY_CACHE = os.path.join(APP_DIR, "pbz_aes_key.txt")
 OODLE_CFG = os.path.join(APP_DIR, "oodle_path.txt")
-DIFF_NAMES = {0: "残疾(Handicapped)", 1: "入阵者(Easy)", 2: "破局者(Normal)",
-              3: "逆天者(Hard)", 4: "六十六天(NightMare)"}
+DIFF_NAMES = {0: "Handicapped", 1: "Easy", 2: "Normal", 3: "Hard", 4: "Nightmare"}
 OODLE_NAMES = ["oo2core_9_win64.dll", "oo2core_8_win64.dll", "oo2core_7_win64.dll",
                "oo2core_6_win64.dll", "oo2core_5_win64.dll"]
 
 
 def steam_libraries():
-    """找出本机所有 Steam 库根目录。"""
+    """Locate every Steam library root on this machine."""
     cands = []
     try:
         import winreg
@@ -101,7 +102,7 @@ def find_oodle(explicit=None):
         except OSError:
             pass
     libs = steam_libraries()
-    for lib in libs:                                    # 已知位置优先
+    for lib in libs:                                    # known locations first
         common = os.path.join(lib, "steamapps", "common")
         for game, subs in (("Death Stranding", ("",)),
                            ("PBZ", ("", os.path.join("ProjectPBZ", "Binaries", "Win64")))):
@@ -111,7 +112,7 @@ def find_oodle(explicit=None):
                     if os.path.exists(p):
                         _remember_oodle(p)
                         return p
-    for lib in libs:                                    # 浅扫每个游戏目录
+    for lib in libs:                                    # shallow scan of each game dir
         common = os.path.join(lib, "steamapps", "common")
         try:
             dirs = [e.path for e in os.scandir(common) if e.is_dir()]
@@ -127,10 +128,10 @@ def find_oodle(explicit=None):
     if p and os.path.exists(p):
         _remember_oodle(p)
         return p
-    raise RuntimeError("找不到 oo2core_*_win64.dll（Oodle 解压库）。\n"
-                       "随便找一个装了 UE 游戏的 Steam 目录就能借到，例如\n"
+    raise RuntimeError("Could not find oo2core_*_win64.dll (the Oodle decompression library).\n"
+                       "Any Steam library that ships an Unreal Engine game will have one, e.g.\n"
                        "  ...\\steamapps\\common\\Death Stranding\\oo2core_7_win64.dll\n"
-                       "把路径写进 oodle_path.txt，或用 --oodle 指定。")
+                       "Write the path into oodle_path.txt, or pass --oodle.")
 
 
 def _remember_oodle(p):
@@ -149,8 +150,8 @@ def _ask_dll():
         r.withdraw()
         r.attributes("-topmost", True)
         p = filedialog.askopenfilename(
-            title="选择 oo2core_*_win64.dll（任意 UE 游戏目录里都有）",
-            filetypes=[("Oodle 库", "oo2core*.dll"), ("DLL", "*.dll")])
+            title="Select oo2core_*_win64.dll (present in any Unreal Engine game directory)",
+            filetypes=[("Oodle library", "oo2core*.dll"), ("DLL", "*.dll")])
         r.destroy()
         return p
     except Exception:
@@ -178,7 +179,7 @@ class Oodle:
         n = self._d(buf, len(buf), ctypes.cast(out, ctypes.c_void_p), raw_size,
                     1, 0, 0, None, 0, None, None, None, 0, 3)
         if n <= 0:
-            raise RuntimeError("Oodle 解压失败")
+            raise RuntimeError("Oodle decompression failed")
         return out.raw[:n]
 
     def compress(self, raw, level=4):
@@ -186,7 +187,7 @@ class Oodle:
         n = self._c(8, raw, len(raw), ctypes.cast(out, ctypes.c_void_p), level,
                     None, None, None, None, 0)  # compressor 8 = Kraken
         if n <= 0:
-            raise RuntimeError("Oodle 压缩失败")
+            raise RuntimeError("Oodle compression failed")
         return out.raw[:n]
 
 
@@ -196,7 +197,7 @@ def find_exe():
         c = os.path.join(lib, r"steamapps\common\PBZ\platform\steam\PBZ.exe")
         if os.path.exists(c):
             return c
-    raise RuntimeError("找不到 PBZ.exe（游戏主程序），请确认已安装《影之刃零》")
+    raise RuntimeError("Could not find PBZ.exe (the game executable); make sure Phantom Blade Zero is installed")
 
 
 def derive_key(exe_path, save_buf):
@@ -209,7 +210,7 @@ def derive_key(exe_path, save_buf):
     anchor = "sealed but block is PLAINTEXT".encode("utf-16-le")
     i = exe.find(anchor)
     if i < 0:
-        raise RuntimeError("主程序里找不到密钥锚点，可能版本更新了")
+        raise RuntimeError("Could not find the key anchor in the game executable; the game may have been updated")
     for delta in range(len(anchor), len(anchor) + 8192):
         base = i + delta
         if base + 64 > len(exe):
@@ -219,7 +220,7 @@ def derive_key(exe_path, save_buf):
         if _try_open_dir(save_buf, k):
             open(KEY_CACHE, "w").write(k.hex())
             return k
-    raise RuntimeError("密钥推导失败，可能版本更新了")
+    raise RuntimeError("Key derivation failed; the game may have been updated")
 
 
 def _try_open_dir(save_buf, key):
@@ -241,7 +242,7 @@ class Slot:
     def __init__(self, name, algo, flag, raw_size, comp, oodle=None):
         self.name, self.algo, self.flag, self.raw_size, self.comp = name, algo, flag, raw_size, comp
         self.oodle = oodle
-        self.raw = None      # 解压后的 bytes
+        self.raw = None      # decompressed bytes
         self.data = None     # json dict
         self.dirty = False
 
@@ -265,7 +266,7 @@ class SaveFile:
         self.path, self.oodle = path, oodle
         self.buf = open(path, "rb").read()
         if self.buf[:4] != b"PBZS":
-            raise RuntimeError("不是 PBZS 存档")
+            raise RuntimeError("Not a PBZS save file")
         self.ver, self.flags = self.buf[4], self.buf[5]
         self.key = derive_key(find_exe(), self.buf)
         self.slots = []
@@ -293,7 +294,7 @@ class SaveFile:
             blk = buf[base + off: base + off + bsize]
             pt = AESGCM(self.key).decrypt(blk[8:20], blk[36:] + blk[20:36], None)
             sl = Slot(name, algo, flag, raw_size, pt, self.oodle)
-            sl.blk = blk          # 原封不动的整块密文，未修改时原样复用
+            sl.blk = blk          # untouched ciphertext block, reused verbatim when unmodified
             self.slots.append(sl)
 
     def get(self, name):
@@ -335,7 +336,7 @@ class SaveFile:
         tmp = out_path + ".tmp"
         with open(tmp, "wb") as f:
             f.write(data)
-        SaveFile(tmp, self.oodle)  # 完整性校验
+        SaveFile(tmp, self.oodle)  # integrity check
         os.replace(tmp, out_path)
 
     def backup(self):
@@ -356,7 +357,7 @@ def find_sav():
                     hits.append(p)
     if hits:
         return max(hits, key=lambda x: os.path.getmtime(x))
-    raise RuntimeError("没找到 PBZSaveGame.sav，请先运行一次游戏，或用 --sav 指定")
+    raise RuntimeError("PBZSaveGame.sav not found; run the game once, or pass --sav")
 
 
 def ensure_game_closed():
@@ -364,7 +365,7 @@ def ensure_game_closed():
         r = subprocess.run(["tasklist", "/FI", "IMAGENAME eq PBZ.exe"], capture_output=True)
         out = (r.stdout or b"").decode("utf-8", "ignore") + (r.stdout or b"").decode("gbk", "ignore")
         if "PBZ.exe" in out or "pbz.exe" in out.lower():
-            sys.exit("检测到游戏正在运行，请先完全退出游戏（以及 Steam）再操作。")
+            sys.exit("The game is running. Fully quit the game (and Steam) first.")
     except FileNotFoundError:
         pass
 
@@ -389,7 +390,7 @@ def parse_ms(t):
 
 
 def boss_name(key):
-    """读 boss_names.json（与脚本/exe 同目录），没有就退回内部键。"""
+    """Load boss_names.json (next to the script/exe); fall back to the internal key."""
     global _BN
     try:
         _BN
@@ -421,7 +422,7 @@ def pick_slot(sf, name):
     if name:
         s = sf.get(name)
         if not s:
-            sys.exit(f"没有槽位 {name}，可用：{', '.join(x.name for x in sf.slots)}")
+            sys.exit(f"No slot named {name}; available: {', '.join(x.name for x in sf.slots)}")
         return s
     adv = sf.get("__Advanced__")
     last = None
@@ -435,9 +436,9 @@ def pick_slot(sf, name):
 
 # ---------------------------------------------------------------- commands
 def cmd_info(sf, args):
-    print(f"存档: {sf.path}")
-    print(f"容器: PBZS v{sf.ver}  槽位 {len(sf.slots)}  大小 {len(sf.buf):,} 字节\n")
-    hdr = f"{'槽位':<14}{'难度':<20}{'周目':<5}{'游戏时长':<11}{'死亡':<6}{'余天':<5}{'存档时间':<10}"
+    print(f"Save: {sf.path}")
+    print(f"Container: PBZS v{sf.ver}  slots {len(sf.slots)}  size {len(sf.buf):,} bytes\n")
+    hdr = f"{'Slot':<14}{'Difficulty':<20}{'Cycle':<5}{'Playtime':<11}{'Deaths':<6}{'Days':<5}{'Saved':<10}"
     print(hdr); print("-" * len(hdr) * 1)
     for s in sf.slots:
         if s.name.startswith("__"):
@@ -451,12 +452,12 @@ def cmd_info(sf, args):
     adv = sf.get("__Advanced__")
     if adv:
         a = adv.json
-        print(f"\n全局(__Advanced__): 上次继续={a.get('LastContinueSlot')}  "
-              f"已解锁成就={len((sf.get('__Achievements__').json.get('UnlockedIds') if sf.get('__Achievements__') else []) or [])}")
+        print(f"\nGlobal (__Advanced__): last continued={a.get('LastContinueSlot')}  "
+              f"achievements unlocked={len((sf.get('__Achievements__').json.get('UnlockedIds') if sf.get('__Achievements__') else []) or [])}")
 
     slot = pick_slot(sf, args.slot)
-    print(f"\n=== {slot.name} 的 Boss 战报（难度 {DIFF_NAMES.get(slot_diff(slot))}）===")
-    print(f"{'Boss':<38}{'难度':<12}{'挑战':<6}{'击杀':<6}{'身陨':<6}{'最佳用时':<10}")
+    print(f"\n=== Boss records for {slot.name} (difficulty {DIFF_NAMES.get(slot_diff(slot))}) ===")
+    print(f"{'Boss':<38}{'Difficulty':<12}{'Attempts':<6}{'Kills':<6}{'Deaths':<6}{'Best time':<10}")
     allrecs = []
     for bname, v in boss_keys(slot).items():
         for k, r in (v.get("Records") or {}).items():
@@ -469,12 +470,12 @@ def cmd_info(sf, args):
     for bname, diff, att, kil, bt in sorted(allrecs, key=lambda x: (-x[1], x[0])):
         label = boss_name(bname)
         print(f"{label:<38}{DIFF_NAMES.get(diff, diff)!s:<12}{att:<6}{kil:<6}{max(att - kil, 0):<6}{fmt_ms(bt):<10}")
-    print(f"\n合计 {len(allrecs)} 条记录；当前档死亡总数 = {(slot.json.get('PBZDeathMeta') or {}).get('DiedTimes')}")
+    print(f"\nTotal {len(allrecs)} records; current slot death total = {(slot.json.get('PBZDeathMeta') or {}).get('DiedTimes')}")
 
     if adv:
         ar = adv.json.get("BossRecord") or {}
         n = sum(len(v.get("Records") or {}) for v in ar.values())
-        print(f"全局生涯战报(__Advanced__.BossRecord)：{len(ar)} 个 Boss / {n} 条记录")
+        print(f"Global career records (__Advanced__.BossRecord): {len(ar)} bosses / {n} records")
 
 
 def cmd_export(sf, args):
@@ -483,7 +484,7 @@ def cmd_export(sf, args):
         p = os.path.join(args.out, s.name.replace("/", "_") + ".json")
         with open(p, "w", encoding="utf-8") as f:
             json.dump(s.json, f, ensure_ascii=False, indent=1)
-    print(f"已导出 {len(sf.slots)} 个槽位到 {args.out}")
+    print(f"Exported {len(sf.slots)} slots to {args.out}")
 
 
 def cmd_apply(sf, args):
@@ -495,24 +496,24 @@ def cmd_apply(sf, args):
             s.dirty = True
             n += 1
     if not n:
-        sys.exit("目录里没有可用的槽位 JSON")
+        sys.exit("No usable slot JSON in that directory")
     ensure_game_closed()
     bak = sf.backup()
     sf.save(sf.path)
-    print(f"已回写 {n} 个槽位；原档备份：{bak}")
+    print(f"Wrote back {n} slots; original backed up to: {bak}")
 
 
 def _write(sf, changed, dry):
     if not changed:
-        print("没有需要修改的内容。")
+        print("Nothing to change.")
         return
     if dry:
-        print("(dry-run，不写盘)")
+        print("(dry-run, nothing written)")
         return
     ensure_game_closed()
     bak = sf.backup()
     sf.save(sf.path)
-    print(f"完成。原档已备份：{bak}")
+    print(f"Done. Original backed up to: {bak}")
 
 
 def cmd_set_difficulty(sf, args):
@@ -590,7 +591,7 @@ def cmd_move_records(sf, args):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="影之刃零 存档编辑器 (PBZS v3)")
+    ap = argparse.ArgumentParser(description="Phantom Blade Zero save editor (PBZS v3)")
     ap.add_argument("--sav", default=None)
     ap.add_argument("--oodle", default=None)
     ap.add_argument("--dry-run", action="store_true")
@@ -605,12 +606,12 @@ def main():
     p.add_argument("--slots", default="all", nargs="+")
 
     p = sub.add_parser("set-boss")
-    p.add_argument("match", help="Boss 名包含的字符串，或 all")
-    p.add_argument("--diff", type=int, default=None, help="只改该难度的记录 (1/2/3)")
+    p.add_argument("match", help="Substring of a boss name, or all")
+    p.add_argument("--diff", type=int, default=None, help="Only change records at this difficulty (1/2/3)")
     p.add_argument("--attempts", type=int)
     p.add_argument("--kills", type=int)
-    p.add_argument("--deaths", type=int, help="身陨次数 = 挑战次数 - 击杀次数")
-    p.add_argument("--time", help="最佳用时，如 1:35.200 或毫秒")
+    p.add_argument("--deaths", type=int, help="Deaths = attempts - kills")
+    p.add_argument("--time", help="Best time, e.g. 1:35.200 or milliseconds")
     p.add_argument("--slots", default="all", nargs="+")
 
     p = sub.add_parser("set-total-deaths")

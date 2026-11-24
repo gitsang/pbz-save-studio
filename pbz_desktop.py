@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-影之刃零 存档工坊 · 桌面版
+Phantom Blade Zero Save Studio - desktop edition
 
-原生窗口（WebView2），不弹命令窗口、不进浏览器。
+A native window (WebView2): no console window, no browser.
     python pbz_desktop.py
 """
 import argparse
@@ -33,7 +33,7 @@ def log(msg):
 def fatal(msg):
     log("FATAL: " + str(msg))
     try:
-        ctypes.windll.user32.MessageBoxW(None, str(msg), "影之刃零 存档工坊 · 启动失败", 0x10)
+        ctypes.windll.user32.MessageBoxW(None, str(msg), "Phantom Blade Zero Save Studio - startup failed", 0x10)
     except Exception:
         pass
 
@@ -63,11 +63,11 @@ def free_port():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--sav", default=None, help="手动指定存档文件（非 Steam 版用）")
-    ap.add_argument("--exe", default=None, help="手动指定游戏主程序 PBZ.exe（用于还原密钥）")
+    ap.add_argument("--sav", default=None, help="Manually specify the save file (for non-Steam builds)")
+    ap.add_argument("--exe", default=None, help="Manually specify the game executable PBZ.exe (used to recover the key)")
     ap.add_argument("--oodle", default=None)
-    ap.add_argument("--view", default=None, help="启动时的默认视图：table / card")
-    ap.add_argument("--tab", default=None, help="启动时打开的标签页：boss / items / global")
+    ap.add_argument("--view", default=None, help="Default view on startup: table / card")
+    ap.add_argument("--tab", default=None, help="Tab to open on startup: boss / items / global")
     args = ap.parse_args()
 
     if args.sav:
@@ -79,12 +79,13 @@ def main():
         W.OODLE = T.Oodle(args.oodle)
         sav = W.sav_path()
         log(f"exe={T.find_exe() if not args.exe else args.exe}")
-        W.load()          # 先读一次，密钥/解码有问题在这里就报出来
+        W.load()          # read once up-front so key/decode problems surface here
     except Exception as e:
         fatal(e)
         return 1
 
-    # 屏幕缩放 125%/150% 时 WebView2 会把内容放大，用 1:1 渲染避免右侧被裁
+    # At 125%/150% display scaling WebView2 enlarges the content, so render 1:1 to
+    # avoid clipping the right-hand side
     os.environ.setdefault("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", "--force-device-scale-factor=1")
 
     port = free_port()
@@ -108,13 +109,13 @@ def main():
     import webview
 
     class Bridge:
-        """给前端用的原生能力：打开文件选择框"""
+        """Native capability exposed to the front-end: open a file picker."""
         def pick_save(self):
             try:
                 w = webview.windows[0]
                 r = w.create_file_dialog(
                     webview.OPEN_DIALOG, allow_multiple=False,
-                    file_types=("存档文件 (*.sav;*.sav.bak-*)", "所有文件 (*.*)"))
+                    file_types=("Save files (*.sav;*.sav.bak-*)", "All files (*.*)"))
                 return r[0] if r else ""
             except Exception:
                 return ""
@@ -124,13 +125,13 @@ def main():
                 w = webview.windows[0]
                 r = w.create_file_dialog(
                     webview.OPEN_DIALOG, allow_multiple=False,
-                    file_types=("程序 (*.exe)", "所有文件 (*.*)"))
+                    file_types=("Programs (*.exe)", "All files (*.*)"))
                 return r[0] if r else ""
             except Exception:
                 return ""
 
     webview.create_window(
-        "影之刃零 · 存档工坊",
+        "Phantom Blade Zero - Save Studio",
         url,
         width=win_w,
         height=win_h,

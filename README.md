@@ -1,175 +1,178 @@
-# 影之刃零 · 存档工坊
+# Phantom Blade Zero · Save Studio
 
-> v1.2.0 · Windows 桌面小工具，用来查看和修改《影之刃零》(Phantom Blade Zero) 的本地存档：
-> Boss 战报（挑战/击杀/身陨/最佳用时）、难度、物品数量，改完自动备份。
+> v1.2.0 · A small Windows desktop tool for viewing and editing your local
+> *Phantom Blade Zero* save: boss records (attempts / kills / deaths / best time),
+> difficulty and item counts — with automatic backups on every write.
 
-![Boss 战报 · 卡片视图](screenshots/boss-cards.png)
+![Boss records · card view](screenshots/boss-cards.png)
 
-## 特性
+English | [中文](README.zh_cn.md)
 
-- **原生桌面窗口**（WebView2），无控制台、不打开浏览器，自带应用图标
-- **三个标签页**：Boss 战报 / 物品 / 生涯战报（跨档跨周目累计账本，只读）
-- **两种视图**：Boss 战报支持「表格 / 卡片」切换，卡片视图一个 Boss 一张卡，适合快速扫视
-- **一键定位存档**：右上角「打开存档目录」直接在资源管理器里选中 `PBZSaveGame.sav`
-- **手动指定存档**：点顶部路径框可手动选存档 / 指定 `PBZ.exe`，非 Steam 版本（WeGame 等）也能用；配置写在 exe 旁的 `sav_path.txt`、`exe_path.txt`
-- **Boss 战报**：按难度/周目列出挑战次数、击杀数、身陨、最佳用时，可直接改；表头点击排序
-- **物品**：275 项物品数量可查可改，支持筛选
-- **安全**：写前自动备份 `.bak-时间戳`，未改动槽位原样复用原始密文块，新文件先全量校验再原子替换
-- **离线**：本地读取存档，只监听 `127.0.0.1`，不联网、不上传
+## Features
 
-## 免责声明
+- **Native desktop window** (WebView2): no console, no browser, with an application icon
+- **Three tabs**: Boss records / Items / Career records (a read-only cross-slot, cross-cycle ledger)
+- **Two views**: Boss records can be shown as a table or as cards, one boss per card, for quick scanning
+- **One-click locate**: the "Open save folder" button selects `PBZSaveGame.sav` directly in Explorer
+- **Manual save location**: click the path box to pick the save or point at `PBZ.exe` by hand, so non-Steam builds (WeGame etc.) work too; the choices are stored in `sav_path.txt` / `exe_path.txt` next to the exe
+- **Boss records**: attempts, kills, deaths and best time listed per difficulty/cycle, all editable; click a header to sort
+- **Items**: 275 item counts, searchable and editable, with filtering
+- **Safe**: a `.bak-<timestamp>` backup before every write, untouched slots reuse their original ciphertext block, and new files are fully validated before an atomic replace
+- **Offline**: the save is read locally, the server only binds `127.0.0.1`, nothing is uploaded
 
-- 仅用于**单人离线**存档，请自行备份；使用风险自负
-- 仓库**不包含**任何游戏本体文件、资源或 RAD Oodle 运行库，需你本机已安装游戏
-- 与 S-GAME / 灵游坊无关，非官方工具
+## Disclaimer
 
-## 结论：能改，而且不用内存修改器
+- For **single-player, offline** saves only. Back up your own saves; use at your own risk
+- The repository **does not** include any game file, asset or RAD Oodle runtime — you need the game installed locally
+- Not affiliated with S-GAME; this is an unofficial tool
 
-存档 `PBZSaveGame.sav` 是 **PBZS v3** 自定义容器：12 字节明文头 + AES-256-GCM 加密目录块 + 每槽位独立加密块（Oodle Kraken 压缩，zlib 也接受）。密钥不是账号绑定的，而是 build 常量——从 `platform\steam\PBZ.exe` 里 `sealed but block is PLAINTEXT` 锚点后 64 字节做 XOR 就能还原。所以你改完重新加密写回，游戏照读。
+## Conclusion: it is editable, and no memory editor is needed
 
-真正的数据全在槽位 JSON 里，你要的三样东西都有明确字段：
+The save `PBZSaveGame.sav` is a **PBZS v3** custom container: a 12-byte plaintext header, an AES-256-GCM encrypted directory block, and one independently encrypted block per slot (Oodle Kraken compressed, zlib also accepted). The key is not account-bound but a build constant — it can be recovered by XOR-ing the 64 bytes following the `sealed but block is PLAINTEXT` anchor inside `platform\steam\PBZ.exe`. So you can edit, re-encrypt and write back, and the game reads it normally.
 
-| 你要的 | 字段 | 说明 |
+The real data all lives in the slot JSON, and the three things you care about have explicit fields:
+
+| What you want | Field | Notes |
 |---|---|---|
-| 难度 | `PBZGameSystem.DifficultModeByte` | 0=Handicapped 1=入阵者 2=破局者 3=逆天者 4=六十六天（枚举取自 PBZ.exe 的 `EDifficultMode`） |
-| Boss 身陨次数 | `BossRecord.<Boss>.Records["<周目>_<难度>"].AttemptCount / KillCount` | 身陨 = AttemptCount − KillCount；键名是 `0_3` 这种「周目_难度」 |
-| 击杀用时 | 同上 `.BestTimeMs` | 毫秒 |
-| 总死亡数 | `PBZDeathMeta.DiedTimes` | 每档一份 |
-| 生涯战报 | `__Advanced__.BossRecord.<Boss>.Records["<难度>"]` | 多一个 `Cycle` 字段，键名只有难度没有周目 |
+| Difficulty | `PBZGameSystem.DifficultModeByte` | 0=Handicapped 1=Easy 2=Normal 3=Hard 4=Nightmare (enum taken from `EDifficultMode` in PBZ.exe) |
+| Boss death count | `BossRecord.<Boss>.Records["<cycle>_<difficulty>"].AttemptCount / KillCount` | deaths = AttemptCount − KillCount; keys look like `0_3` ("cycle_difficulty") |
+| Kill time | same `.BestTimeMs` | milliseconds |
+| Total deaths | `PBZDeathMeta.DiedTimes` | one per slot |
+| Career records | `__Advanced__.BossRecord.<Boss>.Records["<difficulty>"]` | has an extra `Cycle` field; the key is the difficulty only, no cycle |
 
-注意：**当前档的 BossRecord 和 `__Advanced__` 的生涯战报是两套数据**，界面上的「身陨/最快击杀」两处都可能用到，所以工具默认两处一起改。
+Note: **a slot's `BossRecord` and the `__Advanced__` career records are two separate data sets.** Both the "deaths / fastest kill" figures in the UI can come from either, so the tool edits both by default.
 
-### 两套战报的区别
+### How the two record sets differ
 
-| | 单档战报 `BossRecord` | 生涯战报 `__Advanced__.BossRecord` |
+| | Per-slot records `BossRecord` | Career records `__Advanced__.BossRecord` |
 |---|---|---|
-| 位置 | 每个 ManualSave/AutoSave 各一份，跟着存档走 | 存档包里一个特殊槽位，全账号唯一，不属于任何一档 |
-| 键名 | `"<周目>_<难度>"`，如 `0_3` | 只有难度，如 `"3"`；周目写在记录里的 `Cycle` 字段 |
-| 生命周期 | 换档就换一套；读旧档看到的就是旧数据 | 只增不减，跨周目、跨存档累计 |
-| 回档会回退吗 | 会（回到那时的快照） | **不会**——它在 `__Advanced__` 里，回档/覆盖单档都动不到它 |
+| Location | One per ManualSave/AutoSave, travels with the save | A special slot in the save package, unique per account, belonging to no slot |
+| Key | `"<cycle>_<difficulty>"`, e.g. `0_3` | The difficulty only, e.g. `"3"`; the cycle lives in the record's `Cycle` field |
+| Lifetime | Changes with the slot; loading an old save shows old data | Only grows, accumulating across cycles and saves |
+| Does restoring roll it back | Yes (back to that snapshot) | **No** — it lives in `__Advanced__`, so restoring or overwriting a single slot never touches it |
 
-实测证据（就是你的档）：`ZuoShang` 单档是 `1 战 1 杀`，生涯是 `2 战 2 杀`；`WuXuan` 单档只有 `0_3` 一条，生涯里 `1` 和 `3` 两个难度都有。也就是说你之前用备份回过档，单档被拉回去了，生涯那本账还在往前走。
+Measured evidence (from an actual save): `ZuoShang` shows `1 attempt 1 kill` in a slot but `2 attempts 2 kills` in the career ledger; `WuXuan` has only a `0_3` record in a slot while the career ledger holds both difficulty `1` and `3`. In other words, restoring from a backup rolled the slot back while the career ledger kept moving forward.
 
-### Boss 中文名
+### Boss names
 
-`boss_names.json` 是内部键 → 中文名/英文名的对照表，工具和界面都读它：
+`boss_names.json` maps internal keys to Chinese/English display names, and both the tool and the UI read it:
 
 ```json
 "BP_Monster_WuXuan": { "cn": "堕落将军：武轩", "en": "Wu Xuan, the Fallen General", "verified": true }
 ```
 
-- 名字取自**小黑盒「影之刃零 存档解析」的 Boss 图鉴**（75 条官方译名，比英文 wiki 的转译准）
-- 内部键是角色名拼音（`GuWanYue`=骨婉约、`Zhuobi`=拙壁、`YuZan`=玉瓒、`CanQu`=残躯），拼音对得上的直接确认
-- 对不上拼音的（如 `LuanShi`、`GuiChai_Yellow_MoDao`），用**最佳用时**跟图鉴卡片对齐：`LuanShi` 2:05.526 ↔ 图鉴「拳痴：铁狂 2:05」，`GuiChai_Yellow_MoDao` 7:40.974 ↔ 「鬼差高手：斩骑 7:40」
-- `verified: false` 的条目界面会显示 `?`：`HookMan`（钩者？）、`GuiChai_Yellow_ShuangGou`（勾魂？）、`GuiChai_Red_P2`、`EMei_Sword_Top`、`HuaShan_*` —— 这几条没能跟图鉴唯一对上
-- 改名直接编辑这个 JSON，重启生效（exe 旁边有一份，源码旁也有一份）。文件里的 `_version` 用于升级时自动覆盖旧版名字表；你自己改过的名字建议把 `_version` 一起调大，防止被覆盖
+- Names come from the **Xiaoheihe "Phantom Blade Zero save analysis" boss codex** (75 official translations, more accurate than English wiki re-translations)
+- Internal keys are the character names in pinyin (`GuWanYue`=骨婉约, `Zhuobi`=拙壁, `YuZan`=玉瓒, `CanQu`=残躯); where the pinyin matches, the name is confirmed directly
+- Where the pinyin does not match (e.g. `LuanShi`, `GuiChai_Yellow_MoDao`), the **best time** is used to align with a codex card: `LuanShi` 2:05.526 ↔ codex "拳痴：铁狂 2:05", `GuiChai_Yellow_MoDao` 7:40.974 ↔ "鬼差高手：斩骑 7:40"
+- Entries with `verified: false` show a `?` in the UI: `HookMan`, `GuiChai_Yellow_ShuangGou`, `GuiChai_Red_P2`, `EMei_Sword_Top`, `HuaShan_*` — these could not be uniquely matched to a codex card
+- To rename, edit this JSON and restart (one copy sits next to the exe, another next to the source). The file's `_version` is used to overwrite older name tables on upgrade; if you have customised names, raise `_version` too so it is not overwritten
 
-### 单独改某个档的难度
+### Changing one slot's difficulty
 
-- 网页版：Boss 战报卡片标题右边有个「此档难度」下拉 —— **只改当前选中的这个槽位**
-- 网页版整片改：上方「全局修改 → 难度 + 作用范围」
-- 表格里每一行的难度胶囊也是可点的下拉，作用是把**这一条战绩**挪到别的难度下（键名 `0_3` → `0_2`，生涯战报同步跟着改名）
-- 命令行：`python pbz_tool.py set-difficulty 3 --slots ManualSave17`、`python pbz_tool.py move-records --from 1 --to 3`
+- Web UI: the "slot difficulty" dropdown to the right of the boss-card title changes **only the currently selected slot**
+- Web UI, bulk: "Global edits → difficulty + scope" at the top
+- Each row's difficulty pill in the table is also a dropdown, which moves **that single record** to another difficulty (key `0_3` → `0_2`, with the career record renamed to follow)
+- Command line: `python pbz_tool.py set-difficulty 3 --slots ManualSave17`, `python pbz_tool.py move-records --from 1 --to 3`
 
-## 用法 0：双击 exe（桌面窗口，无控制台、不进浏览器）
+## Usage 0: double-click the exe (desktop window, no console, no browser)
 
-`dist\影之刃零-存档工坊.exe` —— 双击直接弹出一个原生窗口（基于 WebView2 / Edge 内核），没有黑框、不打开浏览器。窗口内就是完整界面，关窗口即退出。
+`dist\PhantomBladeZero-SaveStudio.exe` — double-clicking opens a native window (WebView2 / Edge engine) with no black console and no browser. The full UI lives inside the window; closing it quits.
 
-- 技术上：进程内起一个只监听 `127.0.0.1` 的临时端口服务，用 pywebview 把它装进窗口；端口随机，不对外暴露
-- 启动会在 exe 旁生成 `app.log`（记录本次使用的本地地址，排障用）
-- 依赖系统自带的 WebView2 Runtime（Win10 1903+ / Win11 默认都有；缺了会弹窗提示，装微软 Evergreen 版即可）
-- `影之刃零-存档工坊-server.exe` 是同一套代码的「控制台 + 浏览器」旧版，留着调试用
+- Technically: an in-process server binds a random ephemeral port on `127.0.0.1`, and pywebview hosts it in a window; the port is random and never exposed
+- Startup writes `app.log` next to the exe (records the local address used, for troubleshooting)
+- Requires the system WebView2 Runtime (present by default on Win10 1903+ / Win11; if missing, a dialog appears — install Microsoft's Evergreen version)
+- `PhantomBladeZero-SaveStudio-server.exe` is the same code in the older "console + browser" form, kept for debugging
 
-### 界面结构（v1.3）
+### UI layout (v1.3)
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│ 刃 存档工坊 影之刃零 v1.3   [运行状态]   ……存档路径… 刷新 │
+│ 刃 Save Studio Phantom Blade Zero v1.3  [status] …path… Refresh │
 ├──────────┬───────────────────────────────────────────┤
-│ 存档备份   │  Boss 战报 34 │ 物品 277       当前档信息 │
-│ [下拉][还原]│ ───────────────────────────────────────── │
-│ 存档槽位   │  Boss | 难度 | 挑战 | 击杀 | 身陨 | 用时  │
-│ · AutoSave0│   …（点表头排序，只这里滚动）              │
+│ Backups  │  Boss records 34 │ Items 277   current slot info │
+│ [sel][restore]│ ────────────────────────────────────── │
+│ Slots    │  Boss | Diff | Attempts | Kills | Deaths | Time │
+│ · AutoSave0│  …(click headers to sort; only this scrolls) │
 │ · …        │                                          │
 ├──────────┴───────────────────────────────────────────┤
-│ 待提交：N 处修改   最近一条消息     [丢弃][预览][写入]  │
+│ Pending: N changes   last message    [Discard][Preview][Write] │
 └──────────────────────────────────────────────────────┘
 ```
 
-- 外层不滚动：`html/body` 固定 100vh + `overflow:hidden`，只有槽位列表、Boss 表格、物品表格各自内部滚动
-- 备份选择与还原放在左栏顶部，写入前仍会自动生成 `.bak-时间戳`
-- 底部操作栏固定高度、左右 22px 内边距，不再贴边
+- The outer shell does not scroll: `html/body` are pinned to 100vh with `overflow:hidden`, so only the slot list, boss table and item table scroll internally
+- Backup selection and restore sit at the top of the left column; a `.bak-<timestamp>` is still generated before writing
+- The bottom action bar has a fixed height and 22px side padding, so it no longer hugs the edge
 
-## 用法 0.5：双击 exe（旧版：控制台 + 浏览器）
+## Usage 0.5: double-click the exe (older form: console + browser)
 
-`dist\影之刃零-存档工坊.exe` —— 双击即可，无需装 Python。启动后自动打开浏览器到 `http://127.0.0.1:8765`，黑窗口就是服务本体，关掉窗口即退出。
+`dist\PhantomBladeZero-SaveStudio.exe` — double-click, no Python needed. It opens the browser at `http://127.0.0.1:8765`; the black window is the server itself, and closing it quits.
 
-首次启动会在 exe 旁边生成两个小文件：
+The first launch creates two small files next to the exe:
 
-- `pbz_aes_key.txt`：存档 AES 密钥缓存（从游戏主程序算出来的，删了会自动重算）
-- `oodle_path.txt`：借用到的 `oo2core_*_win64.dll` 路径（自动从 Steam 库里找；找不到会弹框让你手动选一次）
+- `pbz_aes_key.txt`: cached save AES key (computed from the game executable; delete it and it is recomputed)
+- `oodle_path.txt`: path to the borrowed `oo2core_*_win64.dll` (found automatically in your Steam libraries; if not found, a dialog asks you to pick it once)
 
-> PyInstaller 打的包没做数字签名，Windows SmartScreen 或杀软可能弹一次警告，选「仍要运行 / 允许」即可。介意的话用下面的源码方式跑。
+> The PyInstaller build is not code-signed, so Windows SmartScreen or an antivirus may warn once — choose "Run anyway / Allow". If that bothers you, run from source as described below.
 
-## 用法 A：网页版（源码）
+## Usage A: web edition (from source)
 
 ```bash
 cd pbz
-python pbz_web.py              # 自动开 http://127.0.0.1:8765
+python pbz_web.py              # opens http://127.0.0.1:8765 automatically
 python pbz_web.py --port 9000 --no-open
 ```
 
-界面能力：左侧槽位列表 → 右侧 Boss 战报表格，直接改「挑战 / 击杀 / 最佳用时」，身陨次数实时算；上方可整体改难度、总死亡数；所有改动先进待提交区，点「预览」看清每一行 diff 后才写盘；备份可一键还原。
+What the UI does: slot list on the left → boss record table on the right, where you can edit "attempts / kills / best time" directly and the death count updates live; the top bar changes difficulty and total deaths globally; every edit first goes into a pending queue, and you only write to disk after "Preview" shows each row's diff; backups can be restored in one click.
 
-只监听 `127.0.0.1`，不联网、不上传。检测到 `PBZ.exe` 在跑会直接拒绝写入。
+It only binds `127.0.0.1` and never goes online or uploads. If `PBZ.exe` is detected running, writes are refused.
 
-## 用法 B：命令行
+## Usage B: command line
 
 ```bash
-# 1) 先看现状（只读，安全）
+# 1) Look at the current state first (read-only, safe)
 python pbz_tool.py info
 python pbz_tool.py info --slot ManualSave17
 
-# 2) 改难度（会改所有 20 个自动/手动档，保持一致）
+# 2) Change difficulty (all 20 auto/manual slots, kept consistent)
 python pbz_tool.py set-difficulty 3
 
-# 3) 改单个 Boss：身陨 0 次 + 最佳用时 35 秒（限逆天者难度的记录）
+# 3) Change a single boss: 0 deaths and a 35s best time (Hard difficulty records only)
 python pbz_tool.py set-boss WuXuan --diff 3 --deaths 0 --time 0:35.000
 
-# 4) 批量：逆天者难度下所有 Boss 身陨清零
+# 4) Batch: zero out deaths for every boss at Hard difficulty
 python pbz_tool.py set-boss all --diff 3 --deaths 0
 
-# 5) 总死亡数清零
+# 5) Zero the total death count
 python pbz_tool.py set-total-deaths 0
 
-# 6) 把入阵者的战报整体改名成逆天者（伪装成一开始就打的最高难度）
+# 6) Re-key all Easy records onto Hard (pretend you played the hardest difficulty from the start)
 python pbz_tool.py move-records --from 1 --to 3
 
-# 7) 想自己抠字段：导出全部槽位 JSON → 改 → 回写
+# 7) Pull out the fields yourself: export every slot as JSON → edit → write back
 python pbz_tool.py export --out dump/
 python pbz_tool.py apply --in dump/
 ```
 
-先加 `--dry-run` 可以只看会改什么、不落盘。
+Add `--dry-run` first to see what would change without writing anything.
 
-## 安全设计
+## Safety design
 
-- 写盘前自动备份成 `PBZSaveGame.sav.bak-<时间戳>`
-- 未修改的槽位**原样复用原始密文块**，一个字节都不动
-- 新文件先在 `.tmp` 上重新解析校验（所有块 GCM 认证 + JSON 解析），通过才原子替换
-- 检测到 `PBZ.exe` 在跑会拒绝写盘
+- A backup named `PBZSaveGame.sav.bak-<timestamp>` is created before writing
+- Unmodified slots **reuse their original ciphertext block**, byte for byte
+- The new file is first re-parsed and validated on a `.tmp` file (every block GCM-authenticated, JSON parsed), and only then atomically replaced
+- Writing is refused while `PBZ.exe` is running
 
-## 风险 / 注意事项
+## Risks and caveats
 
-1. **先完全退出游戏和 Steam**，否则游戏退出时会覆写存档。
-2. **关掉 Steam 云同步**（库右键游戏 → 属性 → 通用 → 取消 Steam 云），否则你的改动可能被云端的旧档盖回去；改完进游戏确认正常后再决定要不要开回来。
-3. 目录里 `1RealTime / 2Hourly / 3Daily` 是游戏的滚动备份，工具不动它们；需要更彻底的回滚可以直接拿这些文件覆盖。
-4. 存档会被重新序列化成紧凑 JSON，所以文件体积会变小（几百 KB），这是正常的，不影响读取。
-5. 改难度只对 0~3 有意义；4 = 六十六天是独立槽位概念（`NightmareRun0`），硬塞成 4 可能让档进不去，别乱试。
-6. 这游戏没有 EAC/BattlEye，没有服务器校验，修改不影响成就；但**别在开着修改器/内存工具的情况下改档**，容易互相打架。
+1. **Fully quit the game and Steam first**, otherwise the game overwrites the save on exit.
+2. **Turn off Steam Cloud sync** (library → right-click the game → Properties → General → untick Steam Cloud), otherwise your edits may be rolled back by an older cloud copy; re-enable it only after confirming the changes in-game.
+3. The `1RealTime / 2Hourly / 3Daily` directories are the game's rolling backups; the tool does not touch them. If you need a more thorough rollback, just copy one of those over.
+4. The save is re-serialised as compact JSON, so the file gets smaller (a few hundred KB). That is normal and does not affect loading.
+5. Changing difficulty only makes sense for 0–3; 4 = Nightmare is a separate slot concept (`NightmareRun0`), and forcing a save to 4 may make it unloadable — do not experiment with that.
+6. The game has no EAC/BattlEye and no server validation, so edits do not affect achievements; but **do not edit saves while a trainer or memory tool is running**, as they tend to interfere with each other.
 
-## 依赖
+## Dependencies
 
-- Python 3.9+；`cryptography`（AES-GCM）
-- 一个 Oodle 解压库 `oo2core_*_win64.dll`。会自动从 Steam 库里找（本机是从 `Death Stranding` 借的），也可写进 `oodle_path.txt` 或用 `--oodle` 指定。
-- 重新打包 exe：`python -m PyInstaller --onefile --name "影之刃零-存档工坊" --add-data "web/index.html;web" pbz_web.py`
+- Python 3.9+; `cryptography` (AES-GCM)
+- An Oodle decompression library `oo2core_*_win64.dll`. It is found automatically in your Steam libraries (on this machine it was borrowed from `Death Stranding`); alternatively write it into `oodle_path.txt` or pass `--oodle`.
+- Rebuilding the exe: `python -m PyInstaller --onefile --name "PhantomBladeZero-SaveStudio" --add-data "web/index.html;web" pbz_web.py`

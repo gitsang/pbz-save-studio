@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-影之刃零 存档工坊 —— 本地 Web 版
+Phantom Blade Zero Save Studio -- local web edition
 
-    python pbz_web.py            # 自动开浏览器 http://127.0.0.1:8765
+    python pbz_web.py            # opens the browser at http://127.0.0.1:8765
     python pbz_web.py --port 9000 --no-open
 
-所有读写都在本机完成，不上传任何数据；写盘前必定生成 .bak 备份。
+All reads and writes happen locally; nothing is uploaded. A .bak backup is always
+created before writing to disk.
 """
 import argparse
 import ctypes
@@ -26,7 +27,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import pbz_tool as T  # noqa: E402
 
-# 打包成 exe 时前端资源被解到 sys._MEIPASS
+# When packaged as an exe the front-end assets are unpacked to sys._MEIPASS
 _RES = getattr(sys, "_MEIPASS", HERE)
 WEB = os.path.join(_RES, "web", "index.html")
 if not os.path.exists(WEB):
@@ -74,14 +75,15 @@ _ORIG_FIND_EXE = T.find_exe
 
 
 def apply_paths(sav=None, exe=None):
-    """切换存档/主程序路径并落盘；传空串表示清空（恢复自动探测）"""
+    """Switch the save/executable paths and persist them; an empty string clears
+    the override and restores auto-detection."""
     if exe is not None:
         if exe == "":
             T.find_exe = _ORIG_FIND_EXE
             _write_cfg(EXE_CFG, None)
         else:
             if not os.path.isfile(exe):
-                return False, f"主程序不存在：{exe}"
+                return False, f"Executable does not exist: {exe}"
             T.find_exe = lambda: exe
             _write_cfg(EXE_CFG, exe)
 
@@ -94,9 +96,9 @@ def apply_paths(sav=None, exe=None):
         return True, None
 
     if not os.path.isfile(sav):
-        return False, f"文件不存在：{sav}"
+        return False, f"File does not exist: {sav}"
     if not sav.lower().endswith(".sav"):
-        return False, "这看起来不是 PBZSaveGame.sav"
+        return False, "This does not look like PBZSaveGame.sav"
 
     T.find_sav = lambda: sav
     _write_cfg(SAV_CFG, sav)
@@ -104,23 +106,24 @@ def apply_paths(sav=None, exe=None):
     try:
         sf = load(force=True)
         if not sf.slots:
-            raise RuntimeError("文件能打开但没有槽位")
+            raise RuntimeError("The file opens but contains no slots")
     except Exception as e:
         _write_cfg(SAV_CFG, None)
         T.find_sav = _ORIG_FIND_SAV
         _CACHE.clear()
         try: load(force=True)
         except Exception: pass
-        return False, f"打不开这个存档：{e}"
+        return False, f"Cannot open this save: {e}"
     return True, None
 
 
-# ---------------------------------------------------------------- 名字
+# ---------------------------------------------------------------- names
 _NAMES = None
 
 
 def names_path():
-    """优先用 exe/脚本旁边的 boss_names.json（可自己改），没有再从内嵌资源拷一份。"""
+    """Prefer the boss_names.json next to the exe/script (you can edit it); fall back
+    to copying the bundled one when missing."""
     p = os.path.join(T.APP_DIR, "boss_names.json")
     src = os.path.join(_RES, "boss_names.json")
     if os.path.abspath(src) == os.path.abspath(p):
@@ -191,10 +194,10 @@ def slot_brief(s, active):
 
 
 ITEM_HINT = {
-    "Item_Traversing": "穿行符",
-    "Item_Piece_002": "碎片",
-    "Return_Weapon_1": "武器重铸符",
-    "Return_ShaqiWeapon_1": "幻刃重铸符",
+    "Item_Traversing": "Traversal Talisman",
+    "Item_Piece_002": "Fragment",
+    "Return_Weapon_1": "Weapon Reforge Talisman",
+    "Return_ShaqiWeapon_1": "Phantom Blade Reforge Talisman",
 }
 
 
@@ -202,13 +205,13 @@ def item_hint(iid):
     if iid in ITEM_HINT:
         return ITEM_HINT[iid]
     if iid.startswith("Weapon_Material"):
-        return "武器升级材料"
+        return "Weapon upgrade material"
     if iid.startswith("Page_"):
-        return "记忆之花·残页"
+        return "Flower of Memory (torn page)"
     if iid.startswith("Book_"):
-        return "书籍"
+        return "Book"
     if iid.startswith("Medi_"):
-        return "药品材料"
+        return "Medicine material"
     return ""
 
 
@@ -228,8 +231,9 @@ def item_rows(slot_obj):
 
 
 def snapshot_first_kills(sf):
-    """用各存档槽的快照时间，推断每个 Boss 首次被击杀的时间。
-    游戏没给 Boss 记录时间戳，只能看它在哪个快照里第一次出现 KillCount>0。"""
+    """Infer when each boss was first killed, using the snapshot times of the save
+    slots. The game does not timestamp boss records, so the only signal is which
+    snapshot first shows KillCount>0 for that boss."""
     snaps = []
     for s in sf.slots:
         if s.name.startswith("__"):
@@ -305,7 +309,7 @@ def game_running():
 
 # ---------------------------------------------------------------- patch
 def apply_patch(sf, req, commit):
-    """返回 (changes, backup)。commit=False 时只在内存里跑一遍做预览。"""
+    """Return (changes, backup). With commit=False it only runs in memory as a preview."""
     changes = []
     real = [0]
     scope_slot = req.get("slot")
@@ -329,9 +333,9 @@ def apply_patch(sf, req, commit):
                     g["DifficultModeByte"] = diff_want
                     s.mark()
                 real[0] += 1
-                note(f"{s.name}: 难度 {T.DIFF_NAMES.get(old, old)} → {T.DIFF_NAMES.get(diff_want, diff_want)}")
+                note(f"{s.name}: difficulty {T.DIFF_NAMES.get(old, old)} -> {T.DIFF_NAMES.get(diff_want, diff_want)}")
 
-    # 按槽位单独改难度：{"ManualSave13": 2, ...}
+    # Per-slot difficulty overrides: {"ManualSave13": 2, ...}
     for sname, dv in (req.get("slotDiffs") or {}).items():
         s = sf.get(sname)
         if not s:
@@ -345,9 +349,10 @@ def apply_patch(sf, req, commit):
                 g["DifficultModeByte"] = int(dv)
                 s.mark()
             real[0] += 1
-            note(f"{s.name}: 难度 {T.DIFF_NAMES.get(old, old)} → {T.DIFF_NAMES.get(int(dv), dv)}")
+            note(f"{s.name}: difficulty {T.DIFF_NAMES.get(old, old)} -> {T.DIFF_NAMES.get(int(dv), dv)}")
 
-    # 把某条战报挪到别的难度下：键名 <周目>_<难度> 重命名，生涯战报键名 <难度>
+    # Move a record to another difficulty: rename the key <cycle>_<difficulty>;
+    # career records are keyed by <difficulty> alone.
     deaths_want = req.get("totalDeaths")
     if deaths_want is not None:
         for s in sf.slots:
@@ -357,7 +362,7 @@ def apply_patch(sf, req, commit):
                     dm["DiedTimes"] = deaths_want
                     s.mark()
                 real[0] += 1
-                note(f"{s.name}: 总死亡数 {dm.get('DiedTimes')} → {deaths_want}")
+                note(f"{s.name}: total deaths {dm.get('DiedTimes')} -> {deaths_want}")
 
     for e in req.get("edits") or []:
         boss, key = e["boss"], e["key"]
@@ -383,7 +388,7 @@ def apply_patch(sf, req, commit):
                 real[0] += 1
                 note(f"{s.name} / {boss.split('_')[-1]} [{key}]: {old} → {new}")
                 hit = True
-        # 生涯战报同步
+        # Keep the career records in sync
         if adv:
             arec = ((adv.json.get("BossRecord") or {}).get(boss) or {}).get("Records", {}).get(str(diff))
             if arec:
@@ -400,12 +405,12 @@ def apply_patch(sf, req, commit):
                     if commit:
                         adv.mark()
                     real[0] += 1
-                    note(f"生涯战报 / {boss.split('_')[-1]} [{diff}]: {old} → {new}")
+                    note(f"career records / {boss.split('_')[-1]} [{diff}]: {old} -> {new}")
                     hit = True
         if not found:
-            note(f"✗ 找不到 {boss.split('_')[-1]} [{key}]：所选范围里的存档没有这条记录")
+            note(f"✗ {boss.split('_')[-1]} [{key}] not found: no save in the selected scope has that record")
         elif not hit:
-            note(f"= {boss.split('_')[-1]} [{key}]：填的数值和存档里一样，没有改动")
+            note(f"= {boss.split('_')[-1]} [{key}]: the value matches the save, nothing changed")
 
     for mv in req.get("moves") or []:
         boss, key, to_diff = mv["boss"], mv["key"], int(mv["toDiff"])
@@ -423,7 +428,7 @@ def apply_patch(sf, req, commit):
                 rs[newkey] = rs.pop(key)
                 s.mark()
             real[0] += 1
-            note(f"{s.name} / {boss.split('_')[-1]}: 记录 {key} → {newkey}")
+            note(f"{s.name} / {boss.split('_')[-1]}: record {key} -> {newkey}")
         if adv:
             br = ((adv.json.get("BossRecord") or {}).get(boss) or {}).get("Records")
             if br and str(src_diff) in br:
@@ -431,7 +436,7 @@ def apply_patch(sf, req, commit):
                     br[str(to_diff)] = br.pop(str(src_diff))
                     adv.mark()
                 real[0] += 1
-                note(f"生涯战报 / {boss.split('_')[-1]}: 记录 {src_diff} → {to_diff}")
+                note(f"career records / {boss.split('_')[-1]}: record {src_diff} -> {to_diff}")
 
     for e in req.get("items") or []:
         iid = e["id"]
@@ -450,16 +455,16 @@ def apply_patch(sf, req, commit):
                     s.mark()
                 real[0] += 1
                 changed = True
-                note(f"{s.name} / {iid}: 数量 {old} → {amt}")
+                note(f"{s.name} / {iid}: amount {old} -> {amt}")
         if not found:
-            note(f"✗ 找不到物品 {iid}：所选范围里的存档没有这一项")
+            note(f"✗ item {iid} not found: no save in the selected scope has that item")
         elif not changed:
-            note(f"= {iid}：数量已经是 {amt}，没有改动")
+            note(f"= {iid}: amount is already {amt}, nothing changed")
 
     bak = None
     if commit and real[0] > 0:
         if game_running():
-            raise RuntimeError("检测到 PBZ.exe 正在运行，请先完全退出游戏和 Steam")
+            raise RuntimeError("PBZ.exe is running. Fully quit the game and Steam first.")
         bak = sf.backup()
         sf.save(sf.path)
         load(force=True)
@@ -533,7 +538,7 @@ class Handler(BaseHTTPRequestHandler):
                 sf = load()
                 sl = sf.get(name) if name else None
                 if not sl:
-                    return self._send(404, {"error": "槽位不存在"})
+                    return self._send(404, {"error": "Slot not found"})
                 return self._send(200, {"slot": sl.name, "items": item_rows(sl)})
             if u.path == "/api/boss":
                 q = parse_qs(u.query)
@@ -541,7 +546,7 @@ class Handler(BaseHTTPRequestHandler):
                 sf = load()
                 s = sf.get(name) if name else None
                 if not s:
-                    return self._send(404, {"error": "槽位不存在"})
+                    return self._send(404, {"error": "Slot not found"})
                 rows = rows_of(s)
                 first, earliest = snapshot_first_kills(sf)
                 for r in rows:
@@ -566,13 +571,15 @@ class Handler(BaseHTTPRequestHandler):
                         return self._send(400, {"error": err})
                     return self._send(200, {"ok": True, "sav": sav_path()})
                 if u.path == "/api/preview":
-                    # 关键：预览必须改在“一次性副本”上，绝不能碰缓存里的对象，
-                    # 否则预览就把内存改掉了，紧接着的写入会误判为“数值没变”。
+                    # Important: a preview must mutate a throwaway copy, never the
+                    # cached object, otherwise the preview itself changes memory and
+                    # the write that follows is misjudged as "the value did not change".
                     sf = T.SaveFile(load().path, OODLE)
                     changes, _, n = apply_patch(sf, req, commit=False)
                     return self._send(200, {"changes": changes, "applied": n})
                 if u.path == "/api/apply":
-                    # 同理，写入前也从磁盘重新读一份，保证判断基准是磁盘上的真实值
+                    # Likewise, re-read from disk before writing so the comparison
+                    # basis is the real on-disk value.
                     sf = load(force=True)
                     changes, bak, n = apply_patch(sf, req, commit=True)
                     if n == 0:
@@ -582,9 +589,9 @@ class Handler(BaseHTTPRequestHandler):
                     p = sav_path()
                     src = os.path.join(os.path.dirname(p), os.path.basename(req["file"]))
                     if not os.path.exists(src):
-                        raise RuntimeError("备份文件不存在")
+                        raise RuntimeError("Backup file does not exist")
                     if game_running():
-                        raise RuntimeError("检测到 PBZ.exe 正在运行，请先退出游戏")
+                        raise RuntimeError("PBZ.exe is running. Quit the game first.")
                     shutil.copy2(src, src + ".restore-tmp")
                     shutil.copy2(p, p + ".bak-before-restore")
                     os.replace(src + ".restore-tmp", p)
@@ -596,9 +603,9 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def _fatal(msg):
-    """双击运行时控制台一闪而过，弹个框让人看得见。"""
+    """Double-clicking flashes the console past too fast, so show a message box."""
     try:
-        ctypes.windll.user32.MessageBoxW(None, str(msg), "影之刃零 存档工坊 · 启动失败", 0x10)
+        ctypes.windll.user32.MessageBoxW(None, str(msg), "Phantom Blade Zero Save Studio - startup failed", 0x10)
     except Exception:
         pass
 
@@ -620,26 +627,26 @@ def main():
         OODLE = T.Oodle(args.oodle)
         sav = sav_path()
     except Exception as e:
-        print("启动失败：", e, flush=True)
+        print("Startup failed:", e, flush=True)
         _fatal(e)
-        input("按回车退出…")
+        input("Press Enter to exit...")
         return
     url = f"http://127.0.0.1:{args.port}/"
     print("=" * 62)
-    print("  影之刃零 · 存档工坊")
-    print(f"  地址：{url}")
-    print(f"  存档：{sav}")
+    print("  Phantom Blade Zero - Save Studio")
+    print(f"  URL: {url}")
+    print(f"  Save: {sav}")
     print(f"  Oodle：{OODLE.path}")
     print("=" * 62)
-    print("关闭这个窗口（或按 Ctrl+C）即退出工具。")
+    print("Close this window (or press Ctrl+C) to quit.")
     if not args.no_open:
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
     try:
         ThreadingHTTPServer(("127.0.0.1", args.port), Handler).serve_forever()
     except OSError as e:
-        _fatal(f"端口 {args.port} 被占用了，可能已经开着一个窗口。\n{e}")
+        _fatal(f"Port {args.port} is in use; another window may already be running.\n{e}")
     except KeyboardInterrupt:
-        print("\n已退出")
+        print("\nExited")
 
 
 if __name__ == "__main__":

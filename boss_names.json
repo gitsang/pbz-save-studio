@@ -1,7 +1,7 @@
 {
   "_version": 3,
-  "_comment": "影之刃零 Boss 中文名对照表。键 = 存档 BossRecord 内部键。名字以小黑盒『存档解析』Boss 图鉴为准；对应关系用『最佳用时』与图鉴卡片逐条比对。verified=false 表示图鉴里该卡是‘尚无记录’，只能按形态推断。",
-  "_cn_source": "小黑盒 存档解析 · Boss 图鉴（75 条 / 已击败 32）",
+  "_comment": "Phantom Blade Zero boss name table (Chinese/English display names). Keys are the internal BossRecord keys from the save file. Chinese names follow the Xiaoheihe 'save analysis' boss codex; each key was matched to a codex card using the 'best time'. verified=false means that card had no record yet and the name is inferred from the boss's form.",
+  "_cn_source": "Xiaoheihe save analysis - boss codex (75 entries / 32 defeated)",
   "BP_Monster_ZuoShang": {
     "cn": "“组织”冥主：左殇",
     "en": "Zuo Shang, Shadow Sovereign",
